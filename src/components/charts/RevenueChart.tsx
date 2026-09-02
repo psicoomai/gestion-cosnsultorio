@@ -56,7 +56,7 @@ export function RevenueChart({ data }: { data: ReturnType<typeof monthlyTotals> 
         />
         <Bar
           dataKey="generado"
-          name="Generado"
+          name="Honorarios"
           fill={themeColors.blueSecondary}
           radius={[3, 3, 0, 0]}
         />

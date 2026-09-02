@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
@@ -22,13 +22,15 @@ export function PaymentModal({
   open,
   onClose,
   patientId,
+  initialTab = "manual",
 }: {
   open: boolean;
   onClose: () => void;
   patientId?: string;
+  initialTab?: "manual" | "comprobante";
 }) {
   const { patients, sessions, payments, registerPayment, findPossibleDuplicates } = useClinicData();
-  const [tab, setTab] = useState<"manual" | "comprobante">("manual");
+  const [tab, setTab] = useState<"manual" | "comprobante">(initialTab);
 
   const [selectedPatientId, setSelectedPatientId] = useState(patientId ?? "");
   const [amount, setAmount] = useState("");
@@ -39,6 +41,10 @@ export function PaymentModal({
   const [error, setError] = useState<string | null>(null);
 
   const patient = patients.find((p) => p.id === selectedPatientId);
+
+  useEffect(() => {
+    if (open) setTab(initialTab);
+  }, [open, initialTab]);
 
   const duplicates = useMemo(() => {
     const amountNum = Number(amount);
@@ -52,7 +58,7 @@ export function PaymentModal({
   }, [selectedPatientId, amount, date, reference, findPossibleDuplicates]);
 
   function reset() {
-    setTab("manual");
+    setTab(initialTab);
     setSelectedPatientId(patientId ?? "");
     setAmount("");
     setDate(todayIso());

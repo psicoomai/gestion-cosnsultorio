@@ -39,7 +39,7 @@ export default function CobrosPage() {
   return (
     <AppShell
       title="Cobros"
-      description="Lo generado, lo cobrado y lo pendiente, por paciente."
+      description="Honorarios, cobrado y pendiente, por paciente."
       actions={<RegisterPaymentButton />}
     >
       <Card>
@@ -58,7 +58,7 @@ export default function CobrosPage() {
             <Thead>
               <Tr>
                 <Th className="pl-6">Paciente</Th>
-                <Th align="right">Generado</Th>
+                <Th align="right">Honorarios</Th>
                 <Th align="right">Cobrado</Th>
                 <Th align="right" className="pr-6">
                   Pendiente

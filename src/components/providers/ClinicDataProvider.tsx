@@ -3,7 +3,8 @@
 // Estado del "backend" en memoria. Todavía no hay servidor ni base de datos:
 // los datos parten de la semilla en mock-data.ts y viven en el navegador
 // mientras dura la sesión (se pierden al recargar). Cuando exista un backend
-// real, addPatient/registerPayment son los puntos donde se conecta.
+// real, addPatient/addSession/registerPayment/attachReceiptToPayment son los
+// puntos donde se conecta.
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { generateId } from "@/lib/id";
@@ -12,6 +13,8 @@ import type { Patient, Payment, Session } from "@/lib/types";
 
 export type NewPatientInput = Omit<Patient, "id">;
 
+export type NewSessionInput = Omit<Session, "id">;
+
 export type NewPaymentInput = Omit<Payment, "id" | "createdAt">;
 
 interface ClinicDataContextValue {
@@ -19,7 +22,11 @@ interface ClinicDataContextValue {
   sessions: Session[];
   payments: Payment[];
   addPatient: (input: NewPatientInput) => Patient;
+  /** Crea UNA sesión puntual. Nunca se dispara automáticamente por la frecuencia. */
+  addSession: (input: NewSessionInput) => Session;
   registerPayment: (input: NewPaymentInput) => Payment;
+  /** Adjunta una imagen de comprobante a un pago YA existente — nunca crea un pago nuevo. */
+  attachReceiptToPayment: (paymentId: string, receiptImageUrl: string) => void;
   findPossibleDuplicates: (candidate: {
     patientId: string;
     amount: number;
@@ -32,7 +39,7 @@ const ClinicDataContext = createContext<ClinicDataContextValue | null>(null);
 
 export function ClinicDataProvider({ children }: { children: ReactNode }) {
   const [patients, setPatients] = useState<Patient[]>(initialPatients);
-  const [sessions] = useState<Session[]>(initialSessions);
+  const [sessions, setSessions] = useState<Session[]>(initialSessions);
   const [payments, setPayments] = useState<Payment[]>(initialPayments);
 
   const value = useMemo<ClinicDataContextValue>(
@@ -45,6 +52,11 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
         setPatients((prev) => [...prev, patient]);
         return patient;
       },
+      addSession(input) {
+        const session: Session = { id: generateId("s"), ...input };
+        setSessions((prev) => [...prev, session]);
+        return session;
+      },
       registerPayment(input) {
         const payment: Payment = {
           id: generateId("pay"),
@@ -53,6 +65,11 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
         };
         setPayments((prev) => [...prev, payment]);
         return payment;
+      },
+      attachReceiptToPayment(paymentId, receiptImageUrl) {
+        setPayments((prev) =>
+          prev.map((p) => (p.id === paymentId ? { ...p, receiptImageUrl } : p))
+        );
       },
       findPossibleDuplicates(candidate) {
         return payments.filter((existing) => {

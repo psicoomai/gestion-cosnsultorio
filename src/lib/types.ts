@@ -77,10 +77,20 @@ export interface Payment {
   patientId: string;
   amount: number;
   date: string; // ISO, fecha de pago
+  time?: string; // HH:mm, si el comprobante la incluye
   reference?: string;
   method?: PaymentMethod;
+  bank?: string; // banco / plataforma, si se identifica
+  concept?: string;
   /** Sesiones a las que se aplica este pago, en el orden en que se abonan. */
   sessionIds: string[];
   source: "manual" | "comprobante";
+  /**
+   * Imagen del comprobante adjunta a este pago (data URL, solo en memoria del
+   * navegador — no hay almacenamiento persistente todavía). Se puede
+   * adjuntar al registrar por comprobante o después a un pago manual; nunca
+   * crea un pago adicional.
+   */
+  receiptImageUrl?: string;
   createdAt: string; // ISO
 }

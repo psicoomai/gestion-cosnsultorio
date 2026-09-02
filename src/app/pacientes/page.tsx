@@ -32,7 +32,7 @@ export default function PacientesPage() {
               <Th>Modalidad de pago</Th>
               <Th align="right">Costo/sesión</Th>
               <Th align="right">Sesiones del mes</Th>
-              <Th align="right">Generado del mes</Th>
+              <Th align="right">Honorarios del mes</Th>
               <Th align="right">Pagado del mes</Th>
               <Th align="right">Pendiente del mes</Th>
               <Th align="right">Pagado histórico</Th>

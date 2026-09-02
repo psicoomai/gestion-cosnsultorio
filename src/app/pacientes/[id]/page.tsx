@@ -11,6 +11,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RegisterPaymentButton } from "@/components/payments/RegisterPaymentButton";
+import { AttachReceiptButton } from "@/components/payments/AttachReceiptButton";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
@@ -113,7 +114,7 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
       {monthTotals ? (
         <div className="mt-3 grid grid-cols-5 gap-4">
           <StatCard label="Sesiones del mes" value={String(monthTotals.sessionsCount)} />
-          <StatCard label="Total generado" value={formatCurrency(monthTotals.generated, patient.currency)} />
+          <StatCard label="Honorarios" value={formatCurrency(monthTotals.generated, patient.currency)} />
           <StatCard label="Total pagado" value={formatCurrency(monthTotals.paid, patient.currency)} />
           <StatCard
             label="Total pendiente"
@@ -196,6 +197,7 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
                     <Th align="right">Monto</Th>
                     <Th>Referencia</Th>
                     <Th>Origen</Th>
+                    <Th className="pr-6">Comprobante</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -206,6 +208,9 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
                       <Td className="text-dark/70">{payment.reference || "—"}</Td>
                       <Td className="text-dark/70">
                         {payment.source === "comprobante" ? "Comprobante" : "Manual"}
+                      </Td>
+                      <Td className="pr-6">
+                        <AttachReceiptButton payment={payment} />
                       </Td>
                     </Tr>
                   ))}

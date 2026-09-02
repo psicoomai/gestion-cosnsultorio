@@ -10,7 +10,7 @@ import { DuplicateWarning } from "@/components/payments/DuplicateWarning";
 import { SessionPicker } from "@/components/payments/SessionPicker";
 import { hasUnpaidSessions } from "@/lib/metrics";
 import { matchPatientsByText } from "@/lib/name-match";
-import { simulateReceiptExtraction, type ExtractedReceipt } from "@/lib/mock-ocr";
+import { simulateReceiptExtraction } from "@/lib/mock-ocr";
 import { cn } from "@/lib/cn";
 
 type Step = "upload" | "extracting" | "review";
@@ -29,6 +29,7 @@ export function ReceiptTab({
 
   const [step, setStep] = useState<Step>("upload");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [receiptDataUrl, setReceiptDataUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -63,7 +64,17 @@ export function ReceiptTab({
     setFileName(file.name);
     setPreviewUrl(URL.createObjectURL(file));
     setStep("extracting");
-    const extracted: ExtractedReceipt = await simulateReceiptExtraction();
+
+    const dataUrlPromise = new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+      reader.readAsDataURL(file);
+    });
+
+    const [extracted] = await Promise.all([
+      simulateReceiptExtraction(),
+      dataUrlPromise.then(setReceiptDataUrl),
+    ]);
     setAmount(String(extracted.amount));
     setDate(extracted.date);
     setReference(extracted.reference ?? "");
@@ -103,8 +114,10 @@ export function ReceiptTab({
       date,
       reference: reference || undefined,
       method: undefined,
+      bank: bank || undefined,
       sessionIds,
       source: "comprobante",
+      receiptImageUrl: receiptDataUrl ?? undefined,
     });
     onDone();
   }
