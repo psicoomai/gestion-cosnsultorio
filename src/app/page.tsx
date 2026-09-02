@@ -1,35 +1,59 @@
+"use client";
+
 import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { Alert } from "@/components/ui/Alert";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
 import { RevenueChart } from "@/components/charts/RevenueChart";
+import { useClinicData } from "@/components/providers/ClinicDataProvider";
 import { formatCurrency } from "@/lib/format";
-import { monthlyRevenue, patients, pendingBalance } from "@/lib/mock-data";
+import { allPatientsTotalsByCurrency, currentMonthKey, monthLabel, monthlyTotals, patientTotals } from "@/lib/metrics";
 
 export default function DashboardPage() {
-  const totalGenerated = patients.reduce((sum, p) => sum + p.totalGenerated, 0);
-  const totalCollected = patients.reduce((sum, p) => sum + p.totalCollected, 0);
-  const totalPending = patients.reduce((sum, p) => sum + pendingBalance(p), 0);
+  const { patients, sessions, payments } = useClinicData();
+  const month = currentMonthKey();
+
+  const totalsByCurrency = allPatientsTotalsByCurrency(patients, sessions, payments, month);
+
   const patientsWithDebt = patients
-    .filter((p) => pendingBalance(p) > 0)
-    .sort((a, b) => pendingBalance(b) - pendingBalance(a));
+    .map((patient) => ({ patient, historic: patientTotals(patient.id, sessions, payments) }))
+    .filter(({ historic }) => historic.pending > 0)
+    .sort((a, b) => b.historic.pending - a.historic.pending);
+
+  // La gráfica combina montos en una sola moneda operativa (MXN) para que las
+  // barras sean comparables entre sí.
+  const mxnPatientIds = new Set(patients.filter((p) => p.currency === "MXN").map((p) => p.id));
+  const mxnSessions = sessions.filter((s) => mxnPatientIds.has(s.patientId));
+  const revenueSeries = monthlyTotals(mxnSessions, payments, 6);
 
   return (
-    <AppShell title="Panel" description="Resumen general del consultorio.">
-      <div className="grid grid-cols-4 gap-4">
-        <StatCard label="Generado (6 meses)" value={formatCurrency(totalGenerated)} />
-        <StatCard label="Cobrado (6 meses)" value={formatCurrency(totalCollected)} />
-        <StatCard
-          label="Pendiente de cobro"
-          value={formatCurrency(totalPending)}
-          tone={totalPending > 0 ? "debt" : "neutral"}
-        />
-        <StatCard label="Pacientes activos" value={String(patients.length)} />
-      </div>
+    <AppShell title="Panel" description={`Resumen general del consultorio · ${monthLabel(month)}.`}>
+      {Object.entries(totalsByCurrency).map(([currency, totals]) => (
+        <div key={currency} className="grid grid-cols-4 gap-4">
+          <StatCard
+            label={`Generado del mes (${currency})`}
+            value={formatCurrency(totals.generated, currency as "MXN" | "USD")}
+          />
+          <StatCard
+            label={`Cobrado del mes (${currency})`}
+            value={formatCurrency(totals.paid, currency as "MXN" | "USD")}
+          />
+          <StatCard
+            label={`Pendiente del mes (${currency})`}
+            value={formatCurrency(totals.pending, currency as "MXN" | "USD")}
+            tone={totals.pending > 0 ? "debt" : "neutral"}
+          />
+          <StatCard label={`Sesiones del mes (${currency})`} value={String(totals.sessionsCount)} />
+        </div>
+      ))}
 
       {patientsWithDebt.length > 0 ? (
-        <Alert variant="debt" title={`${patientsWithDebt.length} pacientes tienen saldo pendiente`} className="mt-6">
+        <Alert
+          variant="debt"
+          title={`${patientsWithDebt.length} pacientes tienen saldo pendiente (histórico)`}
+          className="mt-6"
+        >
           Revisa la sección de Cobros para más detalle por paciente.
         </Alert>
       ) : null}
@@ -37,10 +61,10 @@ export default function DashboardPage() {
       <div className="mt-6 grid grid-cols-3 gap-4">
         <Card className="col-span-2">
           <CardHeader>
-            <CardTitle>Generado vs. cobrado</CardTitle>
+            <CardTitle>Generado vs. cobrado (MXN)</CardTitle>
           </CardHeader>
           <CardContent>
-            <RevenueChart data={monthlyRevenue} />
+            <RevenueChart data={revenueSeries} />
           </CardContent>
         </Card>
 
@@ -60,11 +84,11 @@ export default function DashboardPage() {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {patientsWithDebt.map((patient) => (
+                  {patientsWithDebt.map(({ patient, historic }) => (
                     <Tr key={patient.id}>
                       <Td>{patient.name}</Td>
-                      <Td align="right" className="text-debt-red font-medium">
-                        {formatCurrency(pendingBalance(patient))}
+                      <Td align="right" className="font-medium text-debt-red">
+                        {formatCurrency(historic.pending, patient.currency)}
                       </Td>
                     </Tr>
                   ))}

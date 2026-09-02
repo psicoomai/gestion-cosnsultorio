@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/Badge";
-import type { SessionStatus } from "@/lib/mock-data";
+import type { SessionStatus } from "@/lib/types";
 
 const labels: Record<SessionStatus, string> = {
   pagada: "Pagada",

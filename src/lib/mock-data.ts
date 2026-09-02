@@ -1,115 +1,244 @@
-// Datos de ejemplo para poblar la interfaz. No hay backend conectado todavía;
-// esta es la forma de los datos que se espera consumir en el futuro.
+// Datos semilla de ejemplo. No hay backend conectado todavía: el
+// ClinicDataProvider copia esto a estado en memoria al cargar la app.
 
-export type SessionStatus = "pagada" | "parcial" | "pendiente";
+import type { Patient, Payment, Session } from "@/lib/types";
 
-export type Session = {
-  id: string;
-  patientId: string;
-  patientName: string;
-  date: string; // ISO
-  amount: number;
-  paidAmount: number;
-  status: SessionStatus;
-};
-
-export type Patient = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  activeSince: string; // ISO
-  sessionsCount: number;
-  totalGenerated: number;
-  totalCollected: number;
-};
-
-export const patients: Patient[] = [
+export const initialPatients: Patient[] = [
   {
     id: "p1",
     name: "María Fernanda Ortega",
     email: "mf.ortega@example.com",
     phone: "55 1234 5678",
-    activeSince: "2024-02-10",
-    sessionsCount: 24,
-    totalGenerated: 24000,
-    totalCollected: 24000,
+    startDate: "2024-02-10",
+    status: "activo",
+    sessionFrequency: "semanal-1",
+    paymentModality: "mensual",
+    costPerSession: 1000,
+    currency: "MXN",
   },
   {
     id: "p2",
     name: "Diego Salas Herrera",
     email: "diego.salas@example.com",
     phone: "55 8765 4321",
-    activeSince: "2024-06-03",
-    sessionsCount: 12,
-    totalGenerated: 12000,
-    totalCollected: 8000,
+    startDate: "2024-06-03",
+    status: "activo",
+    sessionFrequency: "semanal-2",
+    paymentModality: "mensual",
+    costPerSession: 1000,
+    currency: "MXN",
   },
   {
     id: "p3",
     name: "Renata Cabrera",
     email: "renata.cabrera@example.com",
     phone: "55 2468 1357",
-    activeSince: "2023-11-21",
-    sessionsCount: 36,
-    totalGenerated: 36000,
-    totalCollected: 33000,
+    startDate: "2023-11-21",
+    status: "activo",
+    sessionFrequency: "semanal-1",
+    paymentModality: "quincenal",
+    costPerSession: 1000,
+    currency: "MXN",
   },
   {
     id: "p4",
     name: "Emilio Torres Vega",
     email: "emilio.torres@example.com",
     phone: "55 9182 7364",
-    activeSince: "2025-01-15",
-    sessionsCount: 6,
-    totalGenerated: 6000,
-    totalCollected: 2000,
+    startDate: "2025-01-15",
+    status: "activo",
+    sessionFrequency: "semanal-1",
+    paymentModality: "por-sesion",
+    costPerSession: 800,
+    currency: "MXN",
+    adminNotes: "Prefiere pagar en efectivo al final de cada sesión.",
   },
   {
     id: "p5",
     name: "Paola Jiménez",
     email: "paola.jimenez@example.com",
     phone: "55 3456 7891",
-    activeSince: "2024-09-08",
-    sessionsCount: 18,
-    totalGenerated: 18000,
-    totalCollected: 18000,
+    startDate: "2024-09-08",
+    status: "activo",
+    sessionFrequency: "quincenal",
+    paymentModality: "mensual",
+    costPerSession: 1000,
+    currency: "MXN",
   },
   {
     id: "p6",
     name: "Héctor Ramírez",
     email: "hector.ramirez@example.com",
     phone: "55 6789 1234",
-    activeSince: "2025-03-02",
-    sessionsCount: 4,
-    totalGenerated: 4000,
-    totalCollected: 0,
+    startDate: "2025-03-02",
+    status: "activo",
+    sessionFrequency: "variable",
+    paymentModality: "semanal",
+    costPerSession: 1000,
+    currency: "USD",
+    adminNotes: "Ha faltado a pagar las últimas sesiones, dar seguimiento.",
   },
 ];
 
-export const sessions: Session[] = [
-  { id: "s1", patientId: "p2", patientName: "Diego Salas Herrera", date: "2026-08-26", amount: 1000, paidAmount: 1000, status: "pagada" },
-  { id: "s2", patientId: "p2", patientName: "Diego Salas Herrera", date: "2026-08-19", amount: 1000, paidAmount: 500, status: "parcial" },
-  { id: "s3", patientId: "p2", patientName: "Diego Salas Herrera", date: "2026-08-12", amount: 1000, paidAmount: 0, status: "pendiente" },
-  { id: "s4", patientId: "p3", patientName: "Renata Cabrera", date: "2026-08-27", amount: 1000, paidAmount: 1000, status: "pagada" },
-  { id: "s5", patientId: "p3", patientName: "Renata Cabrera", date: "2026-08-20", amount: 1000, paidAmount: 0, status: "pendiente" },
-  { id: "s6", patientId: "p4", patientName: "Emilio Torres Vega", date: "2026-08-25", amount: 1000, paidAmount: 0, status: "pendiente" },
-  { id: "s7", patientId: "p4", patientName: "Emilio Torres Vega", date: "2026-08-18", amount: 1000, paidAmount: 1000, status: "pagada" },
-  { id: "s8", patientId: "p1", patientName: "María Fernanda Ortega", date: "2026-08-28", amount: 1000, paidAmount: 1000, status: "pagada" },
-  { id: "s9", patientId: "p5", patientName: "Paola Jiménez", date: "2026-08-24", amount: 1000, paidAmount: 1000, status: "pagada" },
-  { id: "s10", patientId: "p6", patientName: "Héctor Ramírez", date: "2026-08-29", amount: 1000, paidAmount: 0, status: "pendiente" },
-  { id: "s11", patientId: "p6", patientName: "Héctor Ramírez", date: "2026-08-22", amount: 1000, paidAmount: 0, status: "pendiente" },
+export const initialSessions: Session[] = [
+  // María Fernanda — semanal, modalidad mensual (paga el mes junto)
+  { id: "s1", patientId: "p1", date: "2026-07-07", amount: 1000 },
+  { id: "s2", patientId: "p1", date: "2026-07-14", amount: 1000 },
+  { id: "s3", patientId: "p1", date: "2026-07-21", amount: 1000 },
+  { id: "s4", patientId: "p1", date: "2026-08-04", amount: 1000 },
+  { id: "s5", patientId: "p1", date: "2026-08-11", amount: 1000 },
+  { id: "s6", patientId: "p1", date: "2026-08-18", amount: 1000 },
+  { id: "s7", patientId: "p1", date: "2026-08-25", amount: 1000 },
+  { id: "s8", patientId: "p1", date: "2026-09-01", amount: 1000 },
+
+  // Diego — 2 veces por semana, modalidad mensual, costo por sesión $1,000
+  { id: "s9", patientId: "p2", date: "2026-07-06", amount: 1000 },
+  { id: "s10", patientId: "p2", date: "2026-07-13", amount: 1000 },
+  { id: "s11", patientId: "p2", date: "2026-08-12", amount: 1000 },
+  { id: "s12", patientId: "p2", date: "2026-08-19", amount: 1000 },
+  { id: "s13", patientId: "p2", date: "2026-08-26", amount: 1000 },
+  { id: "s14", patientId: "p2", date: "2026-09-01", amount: 1000 },
+
+  // Renata — semanal, modalidad quincenal
+  { id: "s15", patientId: "p3", date: "2026-07-09", amount: 1000 },
+  { id: "s16", patientId: "p3", date: "2026-08-20", amount: 1000 },
+  { id: "s17", patientId: "p3", date: "2026-08-27", amount: 1000 },
+  { id: "s18", patientId: "p3", date: "2026-09-01", amount: 1000 },
+
+  // Emilio — 1 vez por semana, modalidad por sesión, costo por sesión $800
+  { id: "s19", patientId: "p4", date: "2026-07-11", amount: 800 },
+  { id: "s20", patientId: "p4", date: "2026-08-18", amount: 800 },
+  { id: "s21", patientId: "p4", date: "2026-08-25", amount: 800 },
+  { id: "s22", patientId: "p4", date: "2026-09-02", amount: 800 },
+
+  // Paola — quincenal, modalidad mensual (sin sesión todavía este mes)
+  { id: "s23", patientId: "p5", date: "2026-07-10", amount: 1000 },
+  { id: "s24", patientId: "p5", date: "2026-07-24", amount: 1000 },
+  { id: "s25", patientId: "p5", date: "2026-08-07", amount: 1000 },
+  { id: "s26", patientId: "p5", date: "2026-08-24", amount: 1000 },
+
+  // Héctor — frecuencia variable, sin pagos registrados (adeudo completo)
+  { id: "s27", patientId: "p6", date: "2026-08-22", amount: 1000 },
+  { id: "s28", patientId: "p6", date: "2026-08-29", amount: 1000 },
+  { id: "s29", patientId: "p6", date: "2026-09-02", amount: 1000 },
 ];
 
-export function pendingBalance(patient: Patient): number {
-  return Math.max(0, patient.totalGenerated - patient.totalCollected);
-}
-
-export const monthlyRevenue = [
-  { month: "Mar", generado: 58000, cobrado: 54000 },
-  { month: "Abr", generado: 61000, cobrado: 55000 },
-  { month: "May", generado: 64000, cobrado: 60000 },
-  { month: "Jun", generado: 67000, cobrado: 59000 },
-  { month: "Jul", generado: 71000, cobrado: 66000 },
-  { month: "Ago", generado: 74000, cobrado: 63000 },
+export const initialPayments: Payment[] = [
+  {
+    id: "pay1",
+    patientId: "p1",
+    amount: 3000,
+    date: "2026-07-22",
+    method: "Transferencia",
+    reference: "JUL-MFO",
+    sessionIds: ["s1", "s2", "s3"],
+    source: "manual",
+    createdAt: "2026-07-22T18:00:00.000Z",
+  },
+  {
+    id: "pay2",
+    patientId: "p1",
+    amount: 4000,
+    date: "2026-08-26",
+    method: "Transferencia",
+    reference: "AGO-MFO",
+    sessionIds: ["s4", "s5", "s6", "s7"],
+    source: "manual",
+    createdAt: "2026-08-26T18:00:00.000Z",
+  },
+  {
+    id: "pay3",
+    patientId: "p2",
+    amount: 2000,
+    date: "2026-07-14",
+    method: "Transferencia",
+    reference: "DEP-2201",
+    sessionIds: ["s9", "s10"],
+    source: "manual",
+    createdAt: "2026-07-14T18:00:00.000Z",
+  },
+  {
+    id: "pay4",
+    patientId: "p2",
+    amount: 500,
+    date: "2026-08-20",
+    method: "Efectivo",
+    sessionIds: ["s12"],
+    source: "manual",
+    createdAt: "2026-08-20T18:00:00.000Z",
+  },
+  {
+    id: "pay5",
+    patientId: "p2",
+    amount: 1000,
+    date: "2026-08-27",
+    method: "Transferencia",
+    reference: "DEP-2288",
+    sessionIds: ["s13"],
+    source: "comprobante",
+    createdAt: "2026-08-27T18:00:00.000Z",
+  },
+  {
+    id: "pay6",
+    patientId: "p3",
+    amount: 1000,
+    date: "2026-07-10",
+    method: "Efectivo",
+    sessionIds: ["s15"],
+    source: "manual",
+    createdAt: "2026-07-10T18:00:00.000Z",
+  },
+  {
+    id: "pay7",
+    patientId: "p3",
+    amount: 1000,
+    date: "2026-08-28",
+    method: "Transferencia",
+    reference: "RC-0827",
+    sessionIds: ["s17"],
+    source: "comprobante",
+    createdAt: "2026-08-28T18:00:00.000Z",
+  },
+  {
+    id: "pay8",
+    patientId: "p4",
+    amount: 800,
+    date: "2026-07-12",
+    method: "Tarjeta",
+    sessionIds: ["s19"],
+    source: "manual",
+    createdAt: "2026-07-12T18:00:00.000Z",
+  },
+  {
+    id: "pay9",
+    patientId: "p4",
+    amount: 800,
+    date: "2026-08-19",
+    method: "Tarjeta",
+    sessionIds: ["s20"],
+    source: "manual",
+    createdAt: "2026-08-19T18:00:00.000Z",
+  },
+  {
+    id: "pay10",
+    patientId: "p5",
+    amount: 2000,
+    date: "2026-07-25",
+    method: "Transferencia",
+    reference: "PJ-JUL",
+    sessionIds: ["s23", "s24"],
+    source: "manual",
+    createdAt: "2026-07-25T18:00:00.000Z",
+  },
+  {
+    id: "pay11",
+    patientId: "p5",
+    amount: 2000,
+    date: "2026-08-25",
+    method: "Transferencia",
+    reference: "PJ-AGO",
+    sessionIds: ["s25", "s26"],
+    source: "manual",
+    createdAt: "2026-08-25T18:00:00.000Z",
+  },
 ];

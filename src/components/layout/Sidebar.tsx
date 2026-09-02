@@ -9,7 +9,6 @@ const links = [
   { href: "/pacientes", label: "Pacientes" },
   { href: "/sesiones", label: "Sesiones" },
   { href: "/cobros", label: "Cobros" },
-  { href: "/guia-estilo", label: "Guía de estilo" },
 ];
 
 export function Sidebar() {

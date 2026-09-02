@@ -12,11 +12,11 @@ import {
 } from "recharts";
 import { themeColors } from "@/lib/theme-colors";
 import { formatCurrency } from "@/lib/format";
-import type { monthlyRevenue as MonthlyRevenue } from "@/lib/mock-data";
+import type { monthlyTotals } from "@/lib/metrics";
 
 // Los colores de la gráfica se importan de theme-colors.ts (fuente única);
 // nunca se escriben hex/rgb sueltos aquí.
-export function RevenueChart({ data }: { data: typeof MonthlyRevenue }) {
+export function RevenueChart({ data }: { data: ReturnType<typeof monthlyTotals> }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={data} barGap={4} margin={{ left: -12, right: 8 }}>
@@ -26,7 +26,7 @@ export function RevenueChart({ data }: { data: typeof MonthlyRevenue }) {
           strokeOpacity={0.08}
         />
         <XAxis
-          dataKey="month"
+          dataKey="label"
           axisLine={false}
           tickLine={false}
           tick={{ fill: themeColors.dark, fillOpacity: 0.55, fontSize: 12 }}

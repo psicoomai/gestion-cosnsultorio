@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lora, Source_Sans_3 } from "next/font/google";
+import { ClinicDataProvider } from "@/components/providers/ClinicDataProvider";
 import "./globals.css";
 
 const editorial = Lora({
@@ -26,7 +27,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${editorial.variable} ${body.variable}`}>
-      <body>{children}</body>
+      <body>
+        <ClinicDataProvider>{children}</ClinicDataProvider>
+      </body>
     </html>
   );
 }

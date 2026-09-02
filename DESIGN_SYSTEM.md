@@ -1,8 +1,12 @@
 # Sistema visual
 
 Identidad visual coherente, editorial, minimalista, cálida y profesional
-para toda la aplicación. Ver también la ruta `/guia-estilo` en la app, que
-renderiza esta paleta y los componentes en vivo.
+para toda la aplicación.
+
+> Este documento es referencia interna para quien desarrolla el proyecto.
+> La aplicación misma no tiene ninguna pantalla de "identidad visual",
+> "diseño" o "paleta" — solo usa estos colores, nunca los expone como
+> contenido.
 
 ## Fuente única de verdad
 
@@ -39,13 +43,17 @@ etc.) para jerarquía visual sin salir de la paleta.
   un paciente (`Pacientes`), sesiones sin pagar (`Sesiones`), la columna
   "Pendiente" de `Cobros`, y el KPI de pendiente en el `Panel` (solo si es
   mayor a $0). No se usa como color de error genérico ni decorativo.
-- **Un saldo liquidado no queda en rojo.** Cuando `pendingBalance(paciente)`
-  es `0`, la interfaz muestra un badge neutro ("Al corriente") en vez de una
-  marca roja — ver `SessionStatusBadge` y la tabla de `Pacientes`.
-- **Tablas financieras distinguibles de inmediato.** La tabla de `Cobros`
-  separa Generado / Cobrado / Pendiente / Total en columnas con tratamiento
-  visual distinto (texto neutro, azul de acento, rojo condicional, y una
-  fila de total con borde y tipografía serif para destacarla).
+- **Un saldo liquidado no queda en rojo.** Cuando el pendiente de un
+  paciente/sesión es `0`, la interfaz muestra un badge neutro ("Al
+  corriente"/"Pagada") en vez de una marca roja — ver `SessionStatusBadge`
+  y la tabla de `Pacientes`.
+- **Tablas financieras distinguibles de inmediato.** `Cobros` y la tabla de
+  `Pacientes` separan Generado / Cobrado / Pendiente / Total (completo) en
+  columnas con tratamiento visual distinto (texto neutro, azul de acento,
+  rojo condicional, y una fila/columna de total destacada).
+- **Naranja para "atención", nunca para error genérico.** Los mensajes de
+  validación de formulario y la advertencia de "posible pago duplicado"
+  usan `orange-accent`, no `debt-red` — no son adeudos.
 - **Gráficas dentro de la paleta.** `RevenueChart` importa los colores desde
   `theme-colors.ts`, nunca declara hex propios.
 - **Tipografía editorial.** Encabezados en serif (Lora), cuerpo en sans
@@ -54,6 +62,8 @@ etc.) para jerarquía visual sin salir de la paleta.
 
 ## Componentes base
 
-`src/components/ui`: `Button`, `Badge`, `Card`, `Table`, `Alert`,
-`StatCard`, `EmptyState`, `SessionStatusBadge`. Todos consumen los tokens de
-color vía clases de Tailwind — ningún componente declara un color propio.
+`src/components/ui`: `Button`, `Badge`, `Card`, `Table`, `Alert`, `StatCard`,
+`EmptyState`, `Modal`, `Input`, `Select`, `Textarea`, `Checkbox`,
+`FormField`, `SessionStatusBadge`, `PatientStatusBadge`. Todos consumen los
+tokens de color vía clases de Tailwind — ningún componente declara un color
+propio.
