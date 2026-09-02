@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Toda la paleta de color vive en src/lib/theme-colors.ts y se proyecta a
+ * Tailwind desde tailwind.config.ts. Este archivo no declara ningún color
+ * nuevo: solo usa las clases utilitarias (bg-background, text-dark, etc.).
+ */
+
+@layer base {
+  * {
+    @apply border-dark/10;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-dark font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif font-normal text-dark;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    @apply bg-blue-accent/20 text-dark;
+  }
+}
+
+@layer components {
+  /* Subrayado editorial reutilizable para separar secciones sin usar sombras. */
+  .rule {
+    @apply border-t border-dark/10;
+  }
+}
