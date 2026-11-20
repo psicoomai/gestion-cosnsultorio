@@ -47,3 +47,9 @@ mientras dura la sesión del navegador — los cambios (agregar paciente,
 registrar pago) se pierden al recargar la página. Todos los totales se
 calculan siempre desde las sesiones y los pagos reales
 (`src/lib/metrics.ts`), nunca se guardan como campos sueltos.
+
+## Otras apps en este repositorio
+
+- [`abanico/`](./abanico/README.md) — programa de lealtad de Abanico (tarjeta
+  de sellos por niveles y puntos). Es una app independiente, con sus propias
+  dependencias; el `tsconfig` y `check:colors` del consultorio la ignoran.

@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+/*
+ * Identidad visual de Abanico. Toda la paleta vive aquí: para adaptar la app
+ * a los colores oficiales de la marca basta con cambiar estos valores.
+ */
+@theme {
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-crema: #f6efe4;
+  --color-papel: #fffbf5;
+  --color-arena: #ecdfcc;
+  --color-tinta: #2a211c;
+  --color-terracota: #bf4e2b;
+  --color-terracota-oscuro: #9b3b1d;
+  --color-salvia: #2f5d50;
+  --color-ocre: #e2a23b;
+
+  --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Plus Jakarta Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-card: 1.25rem;
+
+  --animate-stamp-in: stamp-in 520ms cubic-bezier(0.2, 0.9, 0.3, 1.35) both;
+  --animate-float-up: float-up 700ms ease-out both;
+  --animate-glow: glow 2.4s ease-in-out infinite;
+
+  @keyframes stamp-in {
+    0% {
+      transform: scale(1.9) rotate(-28deg);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(0.92) rotate(4deg);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes float-up {
+    0% {
+      transform: translateY(12px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-ocre) 45%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 10px color-mix(in oklab, var(--color-ocre) 0%, transparent);
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-crema font-sans text-tinta antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-tinta;
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    @apply bg-terracota/20;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-terracota;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+@media print {
+  body {
+    @apply bg-white;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
