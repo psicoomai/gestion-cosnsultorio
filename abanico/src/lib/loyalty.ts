@@ -2,7 +2,7 @@ import "server-only";
 import type { InStatement, Transaction } from "@libsql/client";
 import { db, num, numOrNull, str } from "@/lib/db";
 import { newCardCode, newCardToken, normalizeCardCode } from "@/lib/codes";
-import { applyStamps, cooldownRemainingMinutes, pointsForPurchase } from "@/lib/stamps";
+import { applyStamps, cooldownRemainingMinutes, creditForPurchase, pointsForPurchase } from "@/lib/stamps";
 import { APP_TIMEZONE, dayKey, startOfDay } from "@/lib/time";
 
 // ---------------------------------------------------------------------------
@@ -25,6 +25,9 @@ export type Settings = {
   /** Pesos de compra necesarios para ganar `earnPoints` puntos. */
   earnAmount: number;
   earnPoints: number;
+  /** Reembolso en efectivo: % de cada compra que se devuelve como saldo a favor. */
+  cashbackEnabled: boolean;
+  cashbackPercent: number;
   /** Catálogo de premios por puntos (solo los activos), del más barato al más caro. */
   catalog: CatalogItem[];
 };
@@ -41,6 +44,9 @@ export type Customer = {
   totalStamps: number;
   points: number;
   totalPoints: number;
+  /** Saldo a favor (reembolso en efectivo), en centavos. */
+  creditCents: number;
+  totalCreditCents: number;
   createdAt: number;
   lastStampAt: number | null;
   lastVisitAt: number | null;
@@ -65,7 +71,9 @@ export type ActivityType =
   | "reward_redeemed"
   | "points_earned"
   | "points_redeemed"
-  | "points_removed";
+  | "points_removed"
+  | "credit_earned"
+  | "credit_used";
 
 export type Activity = {
   id: number;
@@ -95,6 +103,8 @@ function rowToCustomer(row: Record<string, unknown>): Customer {
     totalStamps: num(row.total_stamps),
     points: num(row.points),
     totalPoints: num(row.total_points),
+    creditCents: num(row.credit_cents),
+    totalCreditCents: num(row.total_credit_cents),
     createdAt: num(row.created_at),
     lastStampAt: numOrNull(row.last_stamp_at),
     lastVisitAt: numOrNull(row.last_visit_at),
@@ -150,6 +160,8 @@ export async function getSettings(): Promise<Settings> {
     cooldownMinutes: num(row?.cooldown_minutes),
     earnAmount: num(row?.earn_amount) || 10,
     earnPoints: num(row?.earn_points) || 1,
+    cashbackEnabled: num(row?.cashback_enabled) === 1,
+    cashbackPercent: num(row?.cashback_percent) || 10,
     catalog: catalogResult.rows.map((r) => ({
       id: num(r.id),
       title: str(r.title),
@@ -170,6 +182,8 @@ export type ProgramInput = {
   cooldownMinutes: number;
   earnAmount: number;
   earnPoints: number;
+  cashbackEnabled: boolean;
+  cashbackPercent: number;
 };
 
 export async function saveProgram(input: ProgramInput): Promise<void> {
@@ -177,7 +191,7 @@ export async function saveProgram(input: ProgramInput): Promise<void> {
   await client.execute({
     sql: `UPDATE settings SET business_name = ?, reward_terms = ?, stamps_enabled = ?, stamps_required = ?,
             reward_title = ?, points_enabled = ?, welcome_stamps = ?, cooldown_minutes = ?, earn_amount = ?,
-            earn_points = ?, updated_at = ?
+            earn_points = ?, cashback_enabled = ?, cashback_percent = ?, updated_at = ?
           WHERE id = 1`,
     args: [
       input.businessName,
@@ -190,6 +204,8 @@ export async function saveProgram(input: ProgramInput): Promise<void> {
       input.cooldownMinutes,
       input.earnAmount,
       input.earnPoints,
+      input.cashbackEnabled ? 1 : 0,
+      input.cashbackPercent,
       Date.now(),
     ],
   });
@@ -355,7 +371,8 @@ export async function allCustomersForExport() {
     SELECT c.*,
       (SELECT COUNT(*) FROM rewards r WHERE r.customer_id = c.id AND r.source = 'stamps') AS rewards_earned,
       (SELECT COUNT(*) FROM rewards r WHERE r.customer_id = c.id AND r.redeemed_at IS NOT NULL) AS rewards_redeemed,
-      (SELECT COALESCE(SUM(a.purchase_cents), 0) FROM activity a WHERE a.customer_id = c.id) AS purchases_cents
+      (SELECT COALESCE(SUM(a.purchase_cents), 0) FROM activity a
+        WHERE a.customer_id = c.id AND a.type IN ('points_earned', 'credit_earned')) AS purchases_cents
     FROM customers c ORDER BY c.created_at`);
   return result.rows.map((row) => ({
     ...rowToCustomer(row),
@@ -423,7 +440,15 @@ async function addStampsInTx(
 }
 
 export type VisitOutcome =
-  | { ok: true; stamps: number | null; rewardsEarned: number; pointsAdded: number; points: number }
+  | {
+      ok: true;
+      stamps: number | null;
+      rewardsEarned: number;
+      pointsAdded: number;
+      points: number;
+      creditAdded: number;
+      credit: number;
+    }
   | { ok: false; reason: "not_found" | "nothing" }
   | { ok: false; reason: "cooldown"; minutes: number };
 
@@ -446,7 +471,9 @@ export async function recordVisit(input: {
     settings.pointsEnabled && input.purchaseCents
       ? pointsForPurchase(input.purchaseCents, settings.earnAmount, settings.earnPoints)
       : 0;
-  if (stamps <= 0 && points <= 0) return { ok: false, reason: "nothing" };
+  const credit =
+    settings.cashbackEnabled && input.purchaseCents ? creditForPurchase(input.purchaseCents, settings.cashbackPercent) : 0;
+  if (stamps <= 0 && points <= 0 && credit <= 0) return { ok: false, reason: "nothing" };
 
   const tx = await client.transaction("write");
   try {
@@ -482,6 +509,23 @@ export async function recordVisit(input: {
       });
     }
 
+    if (credit > 0) {
+      await tx.execute({
+        sql: `UPDATE customers SET credit_cents = credit_cents + ?, total_credit_cents = total_credit_cents + ?,
+                last_visit_at = ? WHERE id = ?`,
+        args: [credit, credit, now, customer.id],
+      });
+      await logActivity(tx, {
+        customerId: customer.id,
+        staffId: input.staffId,
+        type: "credit_earned",
+        amount: credit,
+        // La compra se guarda una sola vez aunque genere puntos y saldo.
+        purchaseCents: points > 0 ? null : input.purchaseCents,
+        now,
+      });
+    }
+
     await tx.commit();
     return {
       ok: true,
@@ -489,6 +533,8 @@ export async function recordVisit(input: {
       rewardsEarned: stampResult?.rewardsEarned ?? 0,
       pointsAdded: points,
       points: customer.points + points,
+      creditAdded: credit,
+      credit: customer.creditCents + credit,
     };
   } catch (error) {
     if (!tx.closed) await tx.rollback();
@@ -639,6 +685,38 @@ export async function redeemWithPoints(
   }
 }
 
+export type UseCreditOutcome = { ok: true; credit: number } | { ok: false; reason: "not_found" | "insufficient" };
+
+/** Descuenta saldo a favor del cliente (lo aplica a una compra). */
+export async function useCredit(customerId: number, staffId: number, cents: number): Promise<UseCreditOutcome> {
+  const client = await db();
+  const now = Date.now();
+  const tx = await client.transaction("write");
+  try {
+    const found = await tx.execute({ sql: "SELECT credit_cents FROM customers WHERE id = ?", args: [customerId] });
+    if (!found.rows[0]) {
+      await tx.rollback();
+      return { ok: false, reason: "not_found" };
+    }
+    const updated = await tx.execute({
+      sql: "UPDATE customers SET credit_cents = credit_cents - ?, last_visit_at = ? WHERE id = ? AND credit_cents >= ?",
+      args: [cents, now, customerId, cents],
+    });
+    if (updated.rowsAffected === 0) {
+      await tx.rollback();
+      return { ok: false, reason: "insufficient" };
+    }
+    await logActivity(tx, { customerId, staffId, type: "credit_used", amount: cents, now });
+    await tx.commit();
+    return { ok: true, credit: num(found.rows[0].credit_cents) - cents };
+  } catch (error) {
+    if (!tx.closed) await tx.rollback();
+    throw error;
+  } finally {
+    tx.close();
+  }
+}
+
 export async function getCustomerActivity(customerId: number, limit = 30): Promise<Activity[]> {
   const client = await db();
   const result = await client.execute({
@@ -667,6 +745,8 @@ export type DashboardStats = {
   stamps7d: number;
   pointsGiven7d: number;
   purchases7dCents: number;
+  credit7dCents: number;
+  creditOutstandingCents: number;
   rewardsPending: number;
   rewardsRedeemed30d: number;
   returningRate30d: number | null;
@@ -678,7 +758,8 @@ export type DashboardStats = {
   birthdaysThisMonth: Customer[];
 };
 
-const VISIT_TYPES = "('stamp', 'points_earned', 'reward_redeemed', 'points_redeemed')";
+const VISIT_TYPES =
+  "('stamp', 'points_earned', 'reward_redeemed', 'points_redeemed', 'credit_earned', 'credit_used')";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const client = await db();
@@ -712,9 +793,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
           (SELECT COALESCE(SUM(amount), 0) FROM activity WHERE type = 'stamp' AND created_at >= ?) AS stamps_7d,
           (SELECT COALESCE(SUM(amount), 0) FROM activity WHERE type = 'points_earned' AND created_at >= ?) AS points_7d,
           (SELECT COALESCE(SUM(purchase_cents), 0) FROM activity WHERE created_at >= ?) AS purchases_7d,
+          (SELECT COALESCE(SUM(amount), 0) FROM activity WHERE type = 'credit_earned' AND created_at >= ?) AS credit_7d,
+          (SELECT COALESCE(SUM(credit_cents), 0) FROM customers) AS credit_outstanding,
           (SELECT COUNT(*) FROM rewards WHERE source = 'stamps' AND redeemed_at IS NULL) AS rewards_pending,
           (SELECT COUNT(*) FROM rewards WHERE redeemed_at >= ?) AS rewards_redeemed`,
-        args: [sevenDaysAgo, today, today, sevenDaysAgo, sevenDaysAgo, sevenDaysAgo, thirtyDaysAgo],
+        args: [sevenDaysAgo, today, today, sevenDaysAgo, sevenDaysAgo, sevenDaysAgo, sevenDaysAgo, thirtyDaysAgo],
       },
       {
         sql: `SELECT customer_id, created_at FROM activity WHERE type IN ${VISIT_TYPES} AND created_at >= ?`,
@@ -780,6 +863,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     stamps7d: num(t.stamps_7d),
     pointsGiven7d: num(t.points_7d),
     purchases7dCents: num(t.purchases_7d),
+    credit7dCents: num(t.credit_7d),
+    creditOutstandingCents: num(t.credit_outstanding),
     rewardsPending: num(t.rewards_pending),
     rewardsRedeemed30d: num(t.rewards_redeemed),
     returningRate30d: active > 0 ? num(returning.rows[0]?.repeat_visitors) / active : null,

@@ -34,10 +34,19 @@ import {
   setBusinessName,
   updateCatalogItem,
   updateCustomer,
+  useCredit,
 } from "@/lib/loyalty";
+import { formatMoney } from "@/lib/money";
 import { normalizePhone } from "@/lib/phone";
 import { clear, clientIp, hit } from "@/lib/rate-limit";
-import { MAX_STAMPS_PER_VISIT, STAMPS_MAX, STAMPS_MIN, parseMoneyToCents } from "@/lib/stamps";
+import {
+  CASHBACK_MAX,
+  CASHBACK_MIN,
+  MAX_STAMPS_PER_VISIT,
+  STAMPS_MAX,
+  STAMPS_MIN,
+  parseMoneyToCents,
+} from "@/lib/stamps";
 
 export type FormState = {
   ok?: boolean;
@@ -138,12 +147,13 @@ export async function recordVisitAction(_prev: FormState, formData: FormData): P
   const customerId = intField(formData, "customerId");
   const stamps = settings.stampsEnabled ? intField(formData, "stamps") : 0;
   const amountText = text(formData, "purchase");
-  const purchaseCents = settings.pointsEnabled && amountText ? parseMoneyToCents(amountText) : null;
+  const usesPurchase = settings.pointsEnabled || settings.cashbackEnabled;
+  const purchaseCents = usesPurchase && amountText ? parseMoneyToCents(amountText) : null;
 
   if (settings.stampsEnabled && !(stamps >= 0 && stamps <= MAX_STAMPS_PER_VISIT)) {
     return { error: `Puedes dar de 0 a ${MAX_STAMPS_PER_VISIT} sellos a la vez.`, at: Date.now() };
   }
-  if (settings.pointsEnabled && amountText && purchaseCents === null) {
+  if (usesPurchase && amountText && purchaseCents === null) {
     return { fieldErrors: { purchase: "Escribe el monto en pesos, por ejemplo 85 o 85.50." }, at: Date.now() };
   }
 
@@ -157,8 +167,10 @@ export async function recordVisitAction(_prev: FormState, formData: FormData): P
     }
     if (result.reason === "nothing") {
       return {
-        error: settings.pointsEnabled
-          ? `La compra no alcanza para puntos (se da ${plural(settings.earnPoints, "punto", "puntos")} por cada $${settings.earnAmount}).`
+        error: usesPurchase
+          ? settings.stampsEnabled
+            ? "Elige cuántos sellos dar o escribe el monto de la compra."
+            : "Escribe el monto de la compra."
           : "Elige cuántos sellos dar.",
         at: Date.now(),
       };
@@ -170,6 +182,7 @@ export async function recordVisitAction(_prev: FormState, formData: FormData): P
   const parts: string[] = [];
   if (stamps > 0) parts.push(`+${plural(stamps, "sello", "sellos")}`);
   if (result.pointsAdded > 0) parts.push(`+${plural(result.pointsAdded, "punto", "puntos")}`);
+  if (result.creditAdded > 0) parts.push(`+${formatMoney(result.creditAdded)} de saldo`);
   let message = `Listo: ${parts.join(" y ")}.`;
   if (result.rewardsEarned > 0) {
     const reward = settings.rewardTitle.toLowerCase();
@@ -180,7 +193,8 @@ export async function recordVisitAction(_prev: FormState, formData: FormData): P
   } else if (result.stamps !== null) {
     message += ` Tarjeta: ${result.stamps} de ${settings.stampsRequired}.`;
   }
-  if (result.pointsAdded > 0) message += ` Saldo: ${plural(result.points, "punto", "puntos")}.`;
+  if (result.pointsAdded > 0) message += ` Ahora tiene ${plural(result.points, "punto", "puntos")}.`;
+  if (result.creditAdded > 0) message += ` Saldo a favor: ${formatMoney(result.credit)}.`;
   return { ok: true, message, at: Date.now() };
 }
 
@@ -255,6 +269,30 @@ export async function redeemPointsAction(_prev: FormState, formData: FormData): 
   };
 }
 
+export async function useCreditAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const staff = await requireStaff();
+  const customerId = intField(formData, "customerId");
+  const customer = await getCustomerById(customerId);
+  if (!customer) return { error: "No encontramos a este cliente.", at: Date.now() };
+  const cents = parseMoneyToCents(text(formData, "amount"));
+  if (!cents) return { fieldErrors: { amount: "Escribe cuánto saldo usar, por ejemplo 45.50." }, at: Date.now() };
+  const invalid = await checkValidationCode(formData, customer.code);
+  if (invalid) return invalid;
+
+  const result = await useCredit(customerId, staff.id, cents);
+  if (!result.ok) {
+    return result.reason === "insufficient"
+      ? { fieldErrors: { amount: `Solo tiene ${formatMoney(customer.creditCents)} de saldo.` }, at: Date.now() }
+      : { error: "No encontramos a este cliente.", at: Date.now() };
+  }
+  refresh();
+  return {
+    ok: true,
+    message: `Se aplicaron ${formatMoney(cents)} de saldo. Le quedan ${formatMoney(result.credit)}.`,
+    at: Date.now(),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Clientes
 // ---------------------------------------------------------------------------
@@ -304,11 +342,18 @@ export async function saveProgramAction(_prev: FormState, formData: FormData): P
   const cooldownMinutes = intField(formData, "cooldownMinutes");
   const earnAmount = intField(formData, "earnAmount");
   const earnPoints = intField(formData, "earnPoints");
+  const cashbackEnabled = formData.get("cashbackEnabled") === "on";
+  const cashbackPercent = intField(formData, "cashbackPercent");
 
   const fieldErrors: Record<string, string> = {};
   if (businessName.length < 2 || businessName.length > 40) fieldErrors.businessName = "De 2 a 40 caracteres.";
   if (rewardTerms.length > 300) fieldErrors.rewardTerms = "Máximo 300 caracteres.";
-  if (!stampsEnabled && !pointsEnabled) fieldErrors.programs = "Activa al menos un programa: sellos o puntos.";
+  if (!stampsEnabled && !pointsEnabled && !cashbackEnabled) {
+    fieldErrors.programs = "Activa al menos un programa: sellos, puntos o reembolso.";
+  }
+  if (!(cashbackPercent >= CASHBACK_MIN && cashbackPercent <= CASHBACK_MAX)) {
+    fieldErrors.cashbackPercent = `De ${CASHBACK_MIN} a ${CASHBACK_MAX} %.`;
+  }
   if (!(stampsRequired >= STAMPS_MIN && stampsRequired <= STAMPS_MAX)) {
     fieldErrors.stampsRequired = `Elige entre ${STAMPS_MIN} y ${STAMPS_MAX} sellos.`;
   }
@@ -332,6 +377,8 @@ export async function saveProgramAction(_prev: FormState, formData: FormData): P
     cooldownMinutes,
     earnAmount,
     earnPoints,
+    cashbackEnabled,
+    cashbackPercent,
   });
   refresh();
   return { ok: true, message: "Programa actualizado.", at: Date.now() };

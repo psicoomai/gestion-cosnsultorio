@@ -58,6 +58,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 cooldownMinutes: settings.cooldownMinutes,
                 earnAmount: settings.earnAmount,
                 earnPoints: settings.earnPoints,
+                cashbackEnabled: settings.cashbackEnabled,
+                cashbackPercent: settings.cashbackPercent,
                 stampsRequired: settings.stampsRequired,
                 rewardTitle: settings.rewardTitle,
               }}

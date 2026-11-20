@@ -3,7 +3,13 @@ import { describe, it } from "node:test";
 import { parseBirthday, formatBirthday } from "../src/lib/birthday.ts";
 import { formatCardCode, normalizeCardCode, tokenFromScan } from "../src/lib/card-code.ts";
 import { formatPhone, normalizePhone } from "../src/lib/phone.ts";
-import { applyStamps, cooldownRemainingMinutes, parseMoneyToCents, pointsForPurchase } from "../src/lib/stamps.ts";
+import {
+  applyStamps,
+  cooldownRemainingMinutes,
+  creditForPurchase,
+  parseMoneyToCents,
+  pointsForPurchase,
+} from "../src/lib/stamps.ts";
 import { dayKey, startOfDay } from "../src/lib/time.ts";
 
 describe("tarjeta de sellos", () => {
@@ -52,6 +58,14 @@ describe("puntos", () => {
     assert.equal(pointsForPurchase(0, 10, 1), 0);
     assert.equal(pointsForPurchase(-100, 10, 1), 0);
     assert.equal(pointsForPurchase(5000, 0, 1), 0);
+  });
+
+  it("calcula el reembolso en efectivo en centavos", () => {
+    assert.equal(creditForPurchase(20000, 10), 2000); // 10 % de $200 = $20
+    assert.equal(creditForPurchase(8550, 10), 855); // 10 % de $85.50 = $8.55
+    assert.equal(creditForPurchase(999, 5), 49); // se redondea hacia abajo
+    assert.equal(creditForPurchase(0, 10), 0);
+    assert.equal(creditForPurchase(5000, 0), 0);
   });
 
   it("lee montos en pesos", () => {

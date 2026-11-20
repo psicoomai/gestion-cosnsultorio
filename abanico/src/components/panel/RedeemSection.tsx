@@ -6,7 +6,8 @@ import { GiftIcon } from "@/components/icons";
 import { FormMessage } from "@/components/panel/FormMessage";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Field, Input, cx } from "@/components/ui";
-import { redeemPointsAction, redeemStampRewardAction, type FormState } from "@/lib/actions/panel";
+import { redeemPointsAction, redeemStampRewardAction, useCreditAction, type FormState } from "@/lib/actions/panel";
+import { formatMoney } from "@/lib/money";
 
 const fmt = new Intl.NumberFormat("es-MX");
 
@@ -24,6 +25,8 @@ export function RedeemSection({
   catalog,
   points,
   pointsEnabled,
+  cashbackEnabled,
+  creditCents,
 }: {
   customerId: number;
   verified: boolean;
@@ -31,13 +34,16 @@ export function RedeemSection({
   catalog: CatalogItem[];
   points: number;
   pointsEnabled: boolean;
+  cashbackEnabled: boolean;
+  creditCents: number;
 }) {
   const [code, setCode] = useState("");
   const [stampState, stampAction] = useActionState<FormState, FormData>(redeemStampRewardAction, {});
   const [pointsState, pointsAction] = useActionState<FormState, FormData>(redeemPointsAction, {});
-  const latest = (stampState.at ?? 0) > (pointsState.at ?? 0) ? stampState : pointsState;
+  const [creditState, creditAction] = useActionState<FormState, FormData>(useCreditAction, {});
+  const latest = [stampState, pointsState, creditState].reduce((a, b) => ((b.at ?? 0) > (a.at ?? 0) ? b : a));
   const codeError = latest.fieldErrors?.code;
-  const hasSomething = pending.length > 0 || (pointsEnabled && catalog.length > 0);
+  const hasSomething = pending.length > 0 || (pointsEnabled && catalog.length > 0) || cashbackEnabled;
   if (!hasSomething) return null;
 
   const hidden = (
@@ -125,6 +131,39 @@ export function RedeemSection({
               );
             })}
           </ul>
+        </div>
+      ) : null}
+
+      {cashbackEnabled ? (
+        <div>
+          <p className="mb-2 text-sm font-semibold text-cafe/85">
+            Usar saldo a favor <span className="font-normal text-cafe/55">· tiene {formatMoney(creditCents)}</span>
+          </p>
+          <ActionForm
+            action={creditAction}
+            key={creditState.ok ? creditState.at : undefined}
+            className="flex flex-wrap items-start gap-2"
+          >
+            {hidden}
+            <div className="relative min-w-36 flex-1">
+              <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-cafe/50">$</span>
+              <Input
+                name="amount"
+                inputMode="decimal"
+                placeholder="0.00"
+                autoComplete="off"
+                aria-label="Saldo a usar"
+                className="pl-8"
+                disabled={creditCents <= 0}
+              />
+            </div>
+            <SubmitButton variant="reward" pendingText="…" disabled={creditCents <= 0}>
+              Aplicar saldo
+            </SubmitButton>
+            {creditState.fieldErrors?.amount ? (
+              <p className="w-full text-sm font-medium text-alerta">{creditState.fieldErrors.amount}</p>
+            ) : null}
+          </ActionForm>
         </div>
       ) : null}
 

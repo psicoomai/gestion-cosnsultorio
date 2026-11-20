@@ -5,6 +5,7 @@ import { Card, buttonClass } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { formatBirthday } from "@/lib/birthday";
 import { INACTIVE_DAYS, getDashboardStats, getSettings, type Activity } from "@/lib/loyalty";
+import { formatMoney } from "@/lib/money";
 import { whatsappLink } from "@/lib/phone";
 import { timeAgo } from "@/lib/time";
 import { baseUrl } from "@/lib/url";
@@ -32,6 +33,10 @@ function activityText(a: Activity): string {
       return `cambió ${fmt.format(a.amount)} puntos por ${a.detail ?? "un premio"}`;
     case "points_removed":
       return `perdió ${fmt.format(a.amount)} puntos (corrección)`;
+    case "credit_earned":
+      return `ganó ${formatMoney(a.amount)} de saldo a favor`;
+    case "credit_used":
+      return `usó ${formatMoney(a.amount)} de saldo a favor`;
   }
 }
 
@@ -47,10 +52,16 @@ export default async function DashboardPage() {
       ? { label: "Sellos hoy", value: fmt.format(stats.stampsToday), note: `${fmt.format(stats.stamps7d)} en 7 días` }
       : null,
     settings.pointsEnabled
+      ? { label: "Puntos en 7 días", value: fmt.format(stats.pointsGiven7d) }
+      : null,
+    settings.pointsEnabled || settings.cashbackEnabled
+      ? { label: "Compras registradas", value: money.format(stats.purchases7dCents / 100), note: "últimos 7 días" }
+      : null,
+    settings.cashbackEnabled
       ? {
-          label: "Puntos en 7 días",
-          value: fmt.format(stats.pointsGiven7d),
-          note: stats.purchases7dCents > 0 ? `${money.format(stats.purchases7dCents / 100)} en compras` : undefined,
+          label: "Saldo a favor entregado",
+          value: money.format(stats.credit7dCents / 100),
+          note: `7 días · ${money.format(stats.creditOutstandingCents / 100)} por usar`,
         }
       : null,
     { label: "Premios canjeados", value: fmt.format(stats.rewardsRedeemed30d), note: "últimos 30 días" },

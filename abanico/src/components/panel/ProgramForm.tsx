@@ -6,7 +6,7 @@ import { FormMessage } from "@/components/panel/FormMessage";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Field, Input, Textarea, cx } from "@/components/ui";
 import { saveProgramAction, type FormState } from "@/lib/actions/panel";
-import { STAMPS_MAX, STAMPS_MIN } from "@/lib/stamps";
+import { CASHBACK_MAX, CASHBACK_MIN, STAMPS_MAX, STAMPS_MIN } from "@/lib/stamps";
 
 export type ProgramValues = {
   businessName: string;
@@ -19,6 +19,8 @@ export type ProgramValues = {
   cooldownMinutes: number;
   earnAmount: number;
   earnPoints: number;
+  cashbackEnabled: boolean;
+  cashbackPercent: number;
 };
 
 function Toggle({
@@ -60,6 +62,7 @@ export function ProgramForm({ initial }: { initial: ProgramValues }) {
   const [state, action] = useActionState<FormState, FormData>(saveProgramAction, {});
   const [stampsEnabled, setStampsEnabled] = useState(initial.stampsEnabled);
   const [pointsEnabled, setPointsEnabled] = useState(initial.pointsEnabled);
+  const [cashbackEnabled, setCashbackEnabled] = useState(initial.cashbackEnabled);
   const e = state.fieldErrors ?? {};
 
   return (
@@ -70,7 +73,7 @@ export function ProgramForm({ initial }: { initial: ProgramValues }) {
 
       <div className="space-y-2">
         <p className="text-sm font-semibold text-cafe/85">Programas activos</p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <Toggle
             name="stampsEnabled"
             checked={stampsEnabled}
@@ -84,6 +87,13 @@ export function ProgramForm({ initial }: { initial: ProgramValues }) {
             onChange={setPointsEnabled}
             label="Puntos"
             description="Puntos según lo que gasta, para cambiar por premios."
+          />
+          <Toggle
+            name="cashbackEnabled"
+            checked={cashbackEnabled}
+            onChange={setCashbackEnabled}
+            label="Reembolso en efectivo"
+            description="Un % de cada compra se le devuelve como saldo a favor."
           />
         </div>
         {e.programs ? <p className="text-sm font-medium text-alerta">{e.programs}</p> : null}
@@ -141,6 +151,27 @@ export function ProgramForm({ initial }: { initial: ProgramValues }) {
         </div>
         {e.earn ? <p className="text-sm font-medium text-alerta">{e.earn}</p> : null}
         <p className="text-sm text-cafe/60">Los premios que se cambian por puntos se configuran en el catálogo de abajo.</p>
+      </fieldset>
+
+      <fieldset className={cx("space-y-3 rounded-2xl p-4 ring-1 ring-cafe/10 sm:p-5", !cashbackEnabled && "opacity-60")}>
+        <legend className="px-1 font-sans text-base font-bold">Reembolso en efectivo</legend>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span>El cliente recibe el</span>
+          <div className="w-20">
+            <Input
+              name="cashbackPercent"
+              inputMode="numeric"
+              defaultValue={initial.cashbackPercent}
+              className="text-center"
+              aria-label="Porcentaje de reembolso"
+            />
+          </div>
+          <span>% de cada compra como saldo a favor.</span>
+        </div>
+        {e.cashbackPercent ? <p className="text-sm font-medium text-alerta">{e.cashbackPercent}</p> : null}
+        <p className="text-sm text-cafe/60">
+          {`De ${CASHBACK_MIN} a ${CASHBACK_MAX} %. El saldo lo aplica el equipo en caja como descuento en una compra siguiente.`}
+        </p>
       </fieldset>
 
       <Field

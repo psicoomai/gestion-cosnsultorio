@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { InstallHint } from "@/components/InstallHint";
 import { Logo } from "@/components/Logo";
+import { CreditCard } from "@/components/CreditCard";
 import { PointsCard } from "@/components/PointsCard";
 import { RememberCard } from "@/components/RememberCard";
 import { StampCard } from "@/components/StampCard";
@@ -12,6 +13,7 @@ import { Notice } from "@/components/ui";
 import { forgetCard } from "@/lib/actions/public";
 import { formatCardCode } from "@/lib/codes";
 import { getCustomerActivity, getCustomerByToken, getRewards, getSettings, type Activity } from "@/lib/loyalty";
+import { formatMoney } from "@/lib/money";
 import { qrSvg } from "@/lib/qr";
 import { formatDateTime } from "@/lib/time";
 import { cardUrl } from "@/lib/url";
@@ -42,6 +44,10 @@ function historyText(a: Activity): string | null {
       return `${a.detail ?? "Premio"} · −${fmt.format(a.amount)} puntos`;
     case "points_removed":
       return `Se corrigieron ${fmt.format(a.amount)} puntos`;
+    case "credit_earned":
+      return `+${formatMoney(a.amount)} de saldo a favor`;
+    case "credit_used":
+      return `Usaste ${formatMoney(a.amount)} de saldo`;
     default:
       return null;
   }
@@ -141,6 +147,10 @@ export default async function CardPage({
           />
         ) : null}
 
+        {settings.cashbackEnabled ? (
+          <CreditCard creditCents={customer.creditCents} percent={settings.cashbackPercent} />
+        ) : null}
+
         <section className="rounded-[1.6rem] bg-papel px-5 py-6 text-center ring-1 ring-cafe/10" aria-labelledby="qr-title">
           <h2 id="qr-title" className="font-sans text-sm font-semibold uppercase tracking-[0.16em] text-cafe/60">
             Muestra este código en caja
@@ -180,6 +190,7 @@ export default async function CardPage({
               {[
                 settings.stampsEnabled ? `${customer.totalStamps} ${customer.totalStamps === 1 ? "sello" : "sellos"} en total` : null,
                 settings.pointsEnabled ? `${fmt.format(customer.totalPoints)} puntos ganados` : null,
+                settings.cashbackEnabled ? `${formatMoney(customer.totalCreditCents)} de saldo ganado` : null,
                 redeemedCount > 0 ? `${redeemedCount} ${redeemedCount === 1 ? "premio canjeado" : "premios canjeados"}` : null,
               ]
                 .filter(Boolean)

@@ -12,6 +12,7 @@ import { requireStaff } from "@/lib/auth";
 import { formatBirthday, splitBirthday } from "@/lib/birthday";
 import { formatCardCode } from "@/lib/card-code";
 import { getCustomerActivity, getCustomerById, getRewards, getSettings, type Activity } from "@/lib/loyalty";
+import { formatMoney } from "@/lib/money";
 import { formatPhone, whatsappLink } from "@/lib/phone";
 import { formatDate, formatDateTime, timeAgo } from "@/lib/time";
 import { cardUrl } from "@/lib/url";
@@ -39,6 +40,10 @@ function describe(a: Activity): string {
       return `Canjeó con puntos: ${a.detail ?? "premio"} (−${fmt.format(a.amount)} pts)`;
     case "points_removed":
       return `−${fmt.format(a.amount)} pts (corrección)`;
+    case "credit_earned":
+      return `+${formatMoney(a.amount)} de saldo${a.purchaseCents ? ` · compra de ${money.format(a.purchaseCents / 100)}` : ""}`;
+    case "credit_used":
+      return `Usó ${formatMoney(a.amount)} de saldo`;
   }
 }
 
@@ -107,13 +112,17 @@ export default async function CustomerPage({
               pointsEnabled={settings.pointsEnabled}
               earnAmount={settings.earnAmount}
               earnPoints={settings.earnPoints}
+              cashbackEnabled={settings.cashbackEnabled}
+              cashbackPercent={settings.cashbackPercent}
             />
           </Card>
 
-          {pending.length > 0 || settings.pointsEnabled ? (
+          {pending.length > 0 || settings.pointsEnabled || settings.cashbackEnabled ? (
             <Card>
               <h2 className="mb-4 font-sans text-lg font-bold">Premios</h2>
-              {pending.length === 0 && (!settings.pointsEnabled || settings.catalog.length === 0) ? (
+              {pending.length === 0 &&
+              (!settings.pointsEnabled || settings.catalog.length === 0) &&
+              !settings.cashbackEnabled ? (
                 <p className="text-sm text-cafe/60">Sin premios por canjear.</p>
               ) : (
                 <RedeemSection
@@ -123,6 +132,8 @@ export default async function CustomerPage({
                   catalog={settings.catalog.map(({ id, title, cost }) => ({ id, title, cost }))}
                   points={customer.points}
                   pointsEnabled={settings.pointsEnabled}
+                  cashbackEnabled={settings.cashbackEnabled}
+                  creditCents={customer.creditCents}
                 />
               )}
             </Card>
@@ -143,6 +154,7 @@ export default async function CustomerPage({
           <Card className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
               settings.pointsEnabled ? ["Puntos", fmt.format(customer.points)] : null,
+              settings.cashbackEnabled ? ["Saldo a favor", formatMoney(customer.creditCents)] : null,
               settings.stampsEnabled ? ["Sellos totales", fmt.format(customer.totalStamps)] : null,
               ["Premios canjeados", fmt.format(rewards.filter((r) => r.redeemedAt !== null).length)],
               ["Cliente desde", formatDate(customer.createdAt)],

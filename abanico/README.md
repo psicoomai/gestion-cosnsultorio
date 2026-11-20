@@ -14,7 +14,7 @@ cámara del celular, suma sellos y puntos, y canjea premios.
   actualiza sola en cuanto el equipo registra la compra.
 - Pueden agregarla a la pantalla de inicio (funciona como app).
 
-**Dos programas, juntos o por separado** (se eligen en Ajustes)
+**Tres programas, juntos o por separado** (se eligen en Ajustes)
 
 - **Tarjeta de sellos**: un sello por compra; al juntar los sellos de la
   tarjeta (p. ej. 10) el cliente gana la recompensa y la tarjeta vuelve a
@@ -22,6 +22,9 @@ cámara del celular, suma sellos y puntos, y canjea premios.
 - **Puntos**: el cliente gana puntos según lo que gasta (p. ej. 1 punto por
   cada $10) y los cambia por premios de un catálogo (café por 100 puntos,
   sándwich por 500…).
+- **Reembolso en efectivo**: el cliente recibe un % de cada compra (p. ej.
+  10 %) como saldo a favor, que el equipo aplica como descuento en una compra
+  siguiente. Viene apagado; se activa en Ajustes.
 
 **Para tu equipo (Caja)**
 
@@ -133,6 +136,11 @@ Ver [`.env.example`](./.env.example).
 - **Recordatorios automáticos** (push o SMS). Por ahora el panel te muestra a
   quién escribir y abre WhatsApp con el mensaje listo.
 - **Varias sucursales**.
+- **Ventas en línea automáticas.** Hoy, si vendes por internet, el equipo
+  registra la compra desde el panel buscando al cliente por su celular. Lo
+  siguiente sería incluir un código de un solo uso en cada pedido (el
+  cliente lo escanea y se le suma solo) o conectar la tienda en línea
+  (Shopify, Tiendanube, WooCommerce) para sumar al pagarse el pedido.
 
 ## Desarrollo
 

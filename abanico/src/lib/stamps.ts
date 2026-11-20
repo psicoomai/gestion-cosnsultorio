@@ -44,6 +44,15 @@ export function pointsForPurchase(purchaseCents: number, earnAmount: number, ear
   return Math.floor(purchaseCents / (earnAmount * 100)) * earnPoints;
 }
 
+/**
+ * Saldo a favor (centavos) que genera una compra con reembolso del
+ * `percent` %. Se redondea hacia abajo al centavo.
+ */
+export function creditForPurchase(purchaseCents: number, percent: number): number {
+  if (!(purchaseCents > 0) || !(percent > 0)) return 0;
+  return Math.floor((purchaseCents * percent) / 100);
+}
+
 /** "85.50", "$1,200", "85" → centavos. null si no es un monto válido. */
 export function parseMoneyToCents(input: string): number | null {
   const cleaned = input.replace(/[$\s,]/g, "");
@@ -53,6 +62,8 @@ export function parseMoneyToCents(input: string): number | null {
   return Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
 }
 
+export const CASHBACK_MIN = 1;
+export const CASHBACK_MAX = 50;
 export const STAMPS_MIN = 2;
 export const STAMPS_MAX = 30;
 export const MAX_STAMPS_PER_VISIT = 10;

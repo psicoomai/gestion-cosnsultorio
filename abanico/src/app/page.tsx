@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { CreditCard } from "@/components/CreditCard";
 import { PointsCard } from "@/components/PointsCard";
 import { StampCard } from "@/components/StampCard";
 import { buttonClass } from "@/components/ui";
@@ -25,7 +26,7 @@ export default async function HomePage() {
       "Muestra tu código",
       settings.stampsEnabled
         ? "En cada compra, el equipo escanea tu tarjeta y el sello aparece al instante."
-        : "En cada compra, el equipo escanea tu tarjeta y tus puntos aparecen al instante.",
+        : "En cada compra, el equipo escanea tu tarjeta y tu recompensa aparece al instante.",
     ],
     ["3", "Disfruta tus premios", "Cuando llegues a un premio, lo canjeas en caja mostrando tu tarjeta."],
   ];
@@ -80,6 +81,11 @@ export default async function HomePage() {
                 earnPoints={settings.earnPoints}
                 catalog={settings.catalog.slice(0, 3)}
               />
+            </div>
+          ) : null}
+          {settings.cashbackEnabled ? (
+            <div className="mx-auto max-w-sm rotate-[-1deg] transition hover:rotate-0">
+              <CreditCard creditCents={4550} percent={settings.cashbackPercent} />
             </div>
           ) : null}
         </section>

@@ -25,6 +25,8 @@ const SCHEMA = [
     cooldown_minutes INTEGER NOT NULL DEFAULT 0,
     earn_amount INTEGER NOT NULL DEFAULT 10,
     earn_points INTEGER NOT NULL DEFAULT 1,
+    cashback_enabled INTEGER NOT NULL DEFAULT 0,
+    cashback_percent INTEGER NOT NULL DEFAULT 10,
     updated_at INTEGER NOT NULL
   )`,
   // Catálogo de premios que se cambian por puntos.
@@ -56,6 +58,8 @@ const SCHEMA = [
     total_stamps INTEGER NOT NULL DEFAULT 0,
     points INTEGER NOT NULL DEFAULT 0,
     total_points INTEGER NOT NULL DEFAULT 0,
+    credit_cents INTEGER NOT NULL DEFAULT 0,
+    total_credit_cents INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL,
     last_stamp_at INTEGER,
     last_visit_at INTEGER
@@ -79,7 +83,8 @@ const SCHEMA = [
     staff_id INTEGER REFERENCES staff(id),
     type TEXT NOT NULL CHECK (type IN (
       'join', 'stamp', 'unstamp', 'reward_earned', 'reward_redeemed',
-      'points_earned', 'points_redeemed', 'points_removed'
+      'points_earned', 'points_redeemed', 'points_removed',
+      'credit_earned', 'credit_used'
     )),
     amount INTEGER NOT NULL DEFAULT 0,
     purchase_cents INTEGER,

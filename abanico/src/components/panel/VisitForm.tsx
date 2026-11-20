@@ -6,23 +6,28 @@ import { FormMessage } from "@/components/panel/FormMessage";
 import { SubmitButton } from "@/components/SubmitButton";
 import { Field, Input } from "@/components/ui";
 import { recordVisitAction, type FormState } from "@/lib/actions/panel";
-import { MAX_STAMPS_PER_VISIT, parseMoneyToCents, pointsForPurchase } from "@/lib/stamps";
+import { formatMoney } from "@/lib/money";
+import { MAX_STAMPS_PER_VISIT, creditForPurchase, parseMoneyToCents, pointsForPurchase } from "@/lib/stamps";
 
 const fmt = new Intl.NumberFormat("es-MX");
 
-/** Registrar una compra: sellos y/o monto para puntos, con un solo botón. */
+/** Registrar una compra: sellos y/o monto (para puntos y saldo a favor), con un solo botón. */
 export function VisitForm({
   customerId,
   stampsEnabled,
   pointsEnabled,
   earnAmount,
   earnPoints,
+  cashbackEnabled,
+  cashbackPercent,
 }: {
   customerId: number;
   stampsEnabled: boolean;
   pointsEnabled: boolean;
   earnAmount: number;
   earnPoints: number;
+  cashbackEnabled: boolean;
+  cashbackPercent: number;
 }) {
   const [state, action] = useActionState<FormState, FormData>(recordVisitAction, {});
   const [stamps, setStamps] = useState(stampsEnabled ? 1 : 0);
@@ -36,8 +41,21 @@ export function VisitForm({
   }, [state, stampsEnabled]);
 
   const cents = purchase ? parseMoneyToCents(purchase) : null;
-  const points = cents ? pointsForPurchase(cents, earnAmount, earnPoints) : 0;
-  const nothing = stamps === 0 && points === 0;
+  const points = cents && pointsEnabled ? pointsForPurchase(cents, earnAmount, earnPoints) : 0;
+  const credit = cents && cashbackEnabled ? creditForPurchase(cents, cashbackPercent) : 0;
+  const nothing = stamps === 0 && points === 0 && credit === 0;
+  const rules = [
+    pointsEnabled ? `${earnPoints === 1 ? "1 punto" : `${earnPoints} puntos`} por cada $${fmt.format(earnAmount)}` : null,
+    cashbackEnabled ? `${cashbackPercent} % de saldo a favor` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const preview = [
+    points > 0 ? `${fmt.format(points)} ${points === 1 ? "punto" : "puntos"}` : null,
+    credit > 0 ? `${formatMoney(credit)} de saldo` : null,
+  ]
+    .filter(Boolean)
+    .join(" y ");
 
   return (
     <ActionForm action={action} className="space-y-4">
@@ -72,7 +90,7 @@ export function VisitForm({
         </div>
       ) : null}
 
-      {pointsEnabled ? (
+      {pointsEnabled || cashbackEnabled ? (
         <Field
           label="Monto de la compra"
           htmlFor={`purchase-${customerId}`}
@@ -80,9 +98,9 @@ export function VisitForm({
           hint={
             cents === null && purchase
               ? "Escribe solo números, por ejemplo 85.50"
-              : points > 0
-                ? `= ${fmt.format(points)} ${points === 1 ? "punto" : "puntos"}`
-                : `${earnPoints === 1 ? "1 punto" : `${earnPoints} puntos`} por cada $${fmt.format(earnAmount)}`
+              : preview
+                ? `= ${preview}`
+                : rules
           }
         >
           <div className="relative">
@@ -105,6 +123,7 @@ export function VisitForm({
         {[
           stamps > 0 ? `+${stamps} ${stamps === 1 ? "sello" : "sellos"}` : null,
           points > 0 ? `+${fmt.format(points)} pts` : null,
+          credit > 0 ? `+${formatMoney(credit)}` : null,
         ]
           .filter(Boolean)
           .join(" y ") || "Registrar compra"}
