@@ -1,8 +1,8 @@
 # Abanico · Programa de lealtad
 
-Plataforma de lealtad para **Abanico**: tarjeta de sellos por niveles y puntos,
-en el celular del cliente, sin app y sin cartón. El equipo escanea la tarjeta
-con la cámara del celular, suma sellos y puntos, y canjea premios.
+Plataforma de lealtad para **Abanico**: tarjeta de sellos y puntos, en el
+celular del cliente, sin app y sin cartón. El equipo escanea la tarjeta con la
+cámara del celular, suma sellos y puntos, y canjea premios.
 
 ## Qué hace
 
@@ -16,10 +16,9 @@ con la cámara del celular, suma sellos y puntos, y canjea premios.
 
 **Dos programas, juntos o por separado** (se eligen en Ajustes)
 
-- **Tarjeta de sellos por niveles**: un premio en sellos específicos, por
-  ejemplo 5.º sello café con −25 %, 12.º café gratis, 25.º taza con el logo.
-  Al llegar al último nivel la tarjeta vuelve a empezar. Si quieres la tarjeta
-  clásica, deja un solo nivel (p. ej. 10.º sello: bebida gratis).
+- **Tarjeta de sellos**: un sello por compra; al juntar los sellos de la
+  tarjeta (p. ej. 10) el cliente gana la recompensa y la tarjeta vuelve a
+  empezar.
 - **Puntos**: el cliente gana puntos según lo que gasta (p. ej. 1 punto por
   cada $10) y los cambia por premios de un catálogo (café por 100 puntos,
   sándwich por 500…).
@@ -108,10 +107,12 @@ Ver [`.env.example`](./.env.example).
 
 - **Aviso de privacidad** (`/privacidad`): es una base general. Revísalo con tu
   asesor y agrega tu domicilio y correo de contacto.
-- **Colores**: toda la paleta está en `src/app/globals.css` (`@theme`). Si
-  Abanico tiene colores oficiales, se cambian ahí.
-- **Premios de ejemplo**: los niveles y el catálogo vienen con ejemplos de una
-  cafetería; ajústalos en el panel → Ajustes.
+- **Colores**: la app usa la paleta de Abanico (crema `#FAF8EE`, limón suave
+  `#F4F7BE`, limón `#E5F77D`, azul `#809BCE`, café `#3C2415`), definida en
+  `src/app/globals.css` (`@theme`). El limón y el azul se usan como fondo con
+  texto café encima, para que todo se lea bien.
+- **Premios de ejemplo**: la recompensa de la tarjeta y el catálogo de puntos
+  vienen con ejemplos; ajústalos en el panel → Ajustes.
 
 ## Seguridad
 
@@ -140,7 +141,7 @@ npm run dev        # servidor de desarrollo
 npm run build      # build de producción
 npm start          # servir el build
 npm run typecheck  # TypeScript
-npm test           # pruebas de las reglas (niveles, puntos, teléfonos, códigos, fechas)
+npm test           # pruebas de las reglas (sellos, puntos, teléfonos, códigos, fechas)
 ```
 
 Estructura:
@@ -148,7 +149,7 @@ Estructura:
 - `src/app/` — páginas: portada, registro (`/unirse`), tarjeta del cliente
   (`/tarjeta/[token]`), aviso de privacidad y el panel (`/panel/…`).
 - `src/lib/loyalty.ts` — datos: clientes, sellos, puntos, premios y estadísticas.
-- `src/lib/stamps.ts` — reglas puras de niveles y puntos (con pruebas en `tests/`).
+- `src/lib/stamps.ts` — reglas puras de sellos y puntos (con pruebas en `tests/`).
 - `src/lib/actions/` — acciones del servidor (públicas y del panel).
 - `src/lib/db.ts` — conexión y esquema de la base de datos.
 - `src/components/` — tarjeta de sellos, tarjeta de puntos, escáner de QR y formularios.

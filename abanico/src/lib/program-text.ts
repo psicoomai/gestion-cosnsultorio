@@ -6,12 +6,7 @@ const fmt = new Intl.NumberFormat("es-MX");
 export function programSummary(s: Settings): string {
   const parts: string[] = [];
   if (s.stampsEnabled) {
-    if (s.levels.length === 1) {
-      parts.push(`junta ${s.cardLength} sellos y gana ${s.levels[0].title.toLowerCase()}`);
-    } else if (s.levels.length > 1) {
-      const first = s.levels[0];
-      parts.push(`junta sellos: desde el ${first.at}º ya ganas ${first.title.toLowerCase()}`);
-    }
+    parts.push(`junta ${s.stampsRequired} sellos y gana ${s.rewardTitle.toLowerCase()}`);
   }
   if (s.pointsEnabled) {
     const earn = s.earnPoints === 1 ? "1 punto" : `${fmt.format(s.earnPoints)} puntos`;

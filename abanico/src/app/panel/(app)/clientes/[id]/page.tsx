@@ -72,7 +72,7 @@ export default async function CustomerPage({
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link href="/panel/clientes" className="inline-flex items-center gap-2 text-sm font-semibold text-tinta/60 hover:text-tinta">
+        <Link href="/panel/clientes" className="inline-flex items-center gap-2 text-sm font-semibold text-cafe/60 hover:text-cafe">
           <ArrowLeftIcon className="h-4 w-4" /> Clientes
         </Link>
         <Link href="/panel/sellar" className={buttonClass("secondary", "sm")}>
@@ -83,7 +83,7 @@ export default async function CustomerPage({
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold">{customer.name}</h1>
-          <p className="mt-1 text-tinta/60">
+          <p className="mt-1 text-cafe/60">
             {formatPhone(customer.phone)} · Tarjeta {formatCardCode(customer.code)}
             {customer.birthday ? ` · Cumple el ${formatBirthday(customer.birthday)}` : ""}
           </p>
@@ -98,7 +98,7 @@ export default async function CustomerPage({
         <div className="space-y-6">
           <Card>
             <h2 className="font-sans text-lg font-bold">Registrar compra</h2>
-            <p className="mb-4 mt-1 text-sm text-tinta/60">
+            <p className="mb-4 mt-1 text-sm text-cafe/60">
               {customer.lastVisitAt ? `Última visita ${timeAgo(customer.lastVisitAt)}.` : "Primera compra."}
             </p>
             <VisitForm
@@ -114,7 +114,7 @@ export default async function CustomerPage({
             <Card>
               <h2 className="mb-4 font-sans text-lg font-bold">Premios</h2>
               {pending.length === 0 && (!settings.pointsEnabled || settings.catalog.length === 0) ? (
-                <p className="text-sm text-tinta/60">Sin premios por canjear.</p>
+                <p className="text-sm text-cafe/60">Sin premios por canjear.</p>
               ) : (
                 <RedeemSection
                   customerId={customer.id}
@@ -131,7 +131,13 @@ export default async function CustomerPage({
 
         <div className="space-y-6">
           {settings.stampsEnabled ? (
-            <StampCard businessName={settings.businessName} customerName={customer.name} stamps={customer.stamps} levels={settings.levels} />
+            <StampCard
+              businessName={settings.businessName}
+              customerName={customer.name}
+              stamps={customer.stamps}
+              required={settings.stampsRequired}
+              rewardTitle={settings.rewardTitle}
+            />
           ) : null}
 
           <Card className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -144,7 +150,7 @@ export default async function CustomerPage({
               .filter((x): x is string[] => x !== null)
               .map(([label, value]) => (
                 <div key={label}>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-tinta/50">{label}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-cafe/50">{label}</p>
                   <p className="mt-1 font-display text-xl font-semibold tabular-nums">{value}</p>
                 </div>
               ))}
@@ -152,7 +158,7 @@ export default async function CustomerPage({
 
           <Card className="space-y-3">
             <h2 className="font-sans text-lg font-bold">Enviar su tarjeta</h2>
-            <p className="text-sm text-tinta/60">
+            <p className="text-sm text-cafe/60">
               Si cambió de celular o perdió el enlace, mándale su tarjeta. Al abrirla, se guarda en su teléfono.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -169,16 +175,16 @@ export default async function CustomerPage({
         <Card>
           <h2 className="mb-3 font-sans text-lg font-bold">Historial</h2>
           {activity.length === 0 ? (
-            <p className="text-sm text-tinta/60">Sin movimientos.</p>
+            <p className="text-sm text-cafe/60">Sin movimientos.</p>
           ) : (
-            <ul className="divide-y divide-tinta/10">
+            <ul className="divide-y divide-cafe/10">
               {activity.map((a) => (
                 <li key={a.id} className="flex items-start justify-between gap-4 py-2.5 text-sm">
                   <span>
                     <span className={a.type.startsWith("reward") || a.type === "points_redeemed" ? "font-semibold" : ""}>{describe(a)}</span>
-                    {a.staffName ? <span className="block text-xs text-tinta/50">por {a.staffName}</span> : null}
+                    {a.staffName ? <span className="block text-xs text-cafe/50">por {a.staffName}</span> : null}
                   </span>
-                  <span className="shrink-0 text-tinta/50">{formatDateTime(a.createdAt)}</span>
+                  <span className="shrink-0 text-cafe/50">{formatDateTime(a.createdAt)}</span>
                 </li>
               ))}
             </ul>
@@ -202,7 +208,7 @@ export default async function CustomerPage({
             {settings.stampsEnabled ? (
               <form action={unstampAction} className="flex items-center justify-between gap-3">
                 <input type="hidden" name="customerId" value={customer.id} />
-                <p className="text-sm text-tinta/70">¿Diste un sello de más? Quita uno de la tarjeta actual.</p>
+                <p className="text-sm text-cafe/70">¿Diste un sello de más? Quita uno de la tarjeta actual.</p>
                 <button type="submit" className={buttonClass("danger", "sm")} disabled={customer.stamps <= 0}>
                   Quitar 1 sello
                 </button>
@@ -210,7 +216,7 @@ export default async function CustomerPage({
             ) : null}
             {settings.pointsEnabled ? <RemovePointsForm customerId={customer.id} points={customer.points} /> : null}
             {staff.role === "owner" ? (
-              <div className="border-t border-tinta/10 pt-4">
+              <div className="border-t border-cafe/10 pt-4">
                 <DeleteCustomerForm customerId={customer.id} name={customer.name} />
               </div>
             ) : (

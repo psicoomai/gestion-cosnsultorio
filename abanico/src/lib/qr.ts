@@ -7,6 +7,6 @@ export async function qrSvg(text: string, options: { dark?: string; light?: stri
     type: "svg",
     errorCorrectionLevel: "M",
     margin: 1,
-    color: { dark: options.dark ?? "#2a211cff", light: options.light ?? "#00000000" },
+    color: { dark: options.dark ?? "#3c2415ff", light: options.light ?? "#00000000" },
   });
 }

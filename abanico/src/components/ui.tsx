@@ -8,11 +8,11 @@ type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "reward";
 type ButtonSize = "md" | "lg" | "sm";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-terracota text-white hover:bg-terracota-oscuro active:bg-terracota-oscuro",
-  secondary: "bg-papel text-tinta ring-1 ring-tinta/15 hover:bg-arena/60",
-  ghost: "text-tinta/80 hover:bg-tinta/5 hover:text-tinta",
-  danger: "bg-papel text-terracota-oscuro ring-1 ring-terracota/40 hover:bg-terracota/10",
-  reward: "bg-ocre text-tinta hover:brightness-95",
+  primary: "bg-cafe text-crema hover:bg-cafe/90 active:bg-cafe/80",
+  secondary: "bg-papel text-cafe ring-1 ring-cafe/15 hover:bg-limon-suave/60",
+  ghost: "text-cafe/80 hover:bg-cafe/5 hover:text-cafe",
+  danger: "bg-papel text-alerta ring-1 ring-alerta/40 hover:bg-alerta/10",
+  reward: "bg-limon text-cafe ring-1 ring-cafe/15 hover:brightness-95",
 };
 
 const sizes: Record<ButtonSize, string> = {
@@ -43,14 +43,14 @@ export function Button({
 export function Card({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cx("rounded-[var(--radius-card)] bg-papel p-5 ring-1 ring-tinta/10 sm:p-6", className)}
+      className={cx("rounded-[var(--radius-card)] bg-papel p-5 ring-1 ring-cafe/10 sm:p-6", className)}
       {...props}
     />
   );
 }
 
 export const inputClass =
-  "block w-full h-12 rounded-xl bg-white px-4 text-[16px] text-tinta ring-1 ring-tinta/15 placeholder:text-tinta/35 focus:outline-none focus:ring-2 focus:ring-terracota";
+  "block w-full h-12 rounded-xl bg-white px-4 text-[16px] text-cafe ring-1 ring-cafe/15 placeholder:text-cafe/35 focus:outline-none focus:ring-2 focus:ring-cafe";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input className={cx(inputClass, className)} {...props} />;
@@ -75,14 +75,14 @@ export function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-sm font-semibold text-tinta/85">
+      <label htmlFor={htmlFor} className="block text-sm font-semibold text-cafe/85">
         {label}
       </label>
       {children}
       {error ? (
-        <p className="text-sm font-medium text-terracota-oscuro">{error}</p>
+        <p className="text-sm font-medium text-alerta">{error}</p>
       ) : hint ? (
-        <p className="text-sm text-tinta/55">{hint}</p>
+        <p className="text-sm text-cafe/55">{hint}</p>
       ) : null}
     </div>
   );
@@ -98,10 +98,10 @@ export function Notice({
   className?: string;
 }) {
   const tones = {
-    info: "bg-arena/60 text-tinta",
-    success: "bg-salvia/10 text-salvia ring-1 ring-salvia/25",
-    error: "bg-terracota/10 text-terracota-oscuro ring-1 ring-terracota/30",
-    reward: "bg-ocre/20 text-tinta ring-1 ring-ocre/50",
+    info: "bg-limon-suave/70 text-cafe",
+    success: "bg-limon-suave text-cafe ring-1 ring-limon",
+    error: "bg-alerta/[0.07] text-alerta ring-1 ring-alerta/30",
+    reward: "bg-limon/50 text-cafe ring-1 ring-limon",
   } as const;
   return (
     <div role={tone === "error" ? "alert" : "status"} className={cx("rounded-xl px-4 py-3 text-sm", tones[tone], className)}>
@@ -112,9 +112,9 @@ export function Notice({
 
 export function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "reward" | "success" }) {
   const tones = {
-    neutral: "bg-tinta/[0.07] text-tinta/75",
-    reward: "bg-ocre/25 text-tinta",
-    success: "bg-salvia/12 text-salvia",
+    neutral: "bg-cafe/[0.07] text-cafe/75",
+    reward: "bg-limon text-cafe",
+    success: "bg-azul/30 text-cafe",
   } as const;
   return (
     <span className={cx("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold", tones[tone])}>

@@ -37,13 +37,7 @@ import {
 } from "@/lib/loyalty";
 import { normalizePhone } from "@/lib/phone";
 import { clear, clientIp, hit } from "@/lib/rate-limit";
-import {
-  LEVEL_MAX_AT,
-  MAX_LEVELS,
-  MAX_STAMPS_PER_VISIT,
-  parseMoneyToCents,
-  type StampLevel,
-} from "@/lib/stamps";
+import { MAX_STAMPS_PER_VISIT, STAMPS_MAX, STAMPS_MIN, parseMoneyToCents } from "@/lib/stamps";
 
 export type FormState = {
   ok?: boolean;
@@ -177,10 +171,14 @@ export async function recordVisitAction(_prev: FormState, formData: FormData): P
   if (stamps > 0) parts.push(`+${plural(stamps, "sello", "sellos")}`);
   if (result.pointsAdded > 0) parts.push(`+${plural(result.pointsAdded, "punto", "puntos")}`);
   let message = `Listo: ${parts.join(" y ")}.`;
-  if (result.earned.length > 0) {
-    message += ` ¡Ganó ${result.earned.join(" y ")}!`;
+  if (result.rewardsEarned > 0) {
+    const reward = settings.rewardTitle.toLowerCase();
+    message +=
+      result.rewardsEarned === 1
+        ? ` ¡Completó su tarjeta y ganó ${reward}!`
+        : ` ¡Completó ${result.rewardsEarned} tarjetas y ganó ${result.rewardsEarned} × ${reward}!`;
   } else if (result.stamps !== null) {
-    message += ` Tarjeta: ${result.stamps} de ${settings.cardLength}.`;
+    message += ` Tarjeta: ${result.stamps} de ${settings.stampsRequired}.`;
   }
   if (result.pointsAdded > 0) message += ` Saldo: ${plural(result.points, "punto", "puntos")}.`;
   return { ok: true, message, at: Date.now() };
@@ -294,51 +292,28 @@ export async function deleteCustomerAction(_prev: FormState, formData: FormData)
 // Ajustes del programa y equipo
 // ---------------------------------------------------------------------------
 
-/** Lee los niveles del formulario (campos levelAt / levelTitle repetidos). */
-function readLevels(formData: FormData): { levels: StampLevel[]; error?: string } {
-  const ats = formData.getAll("levelAt").map((v) => String(v).trim());
-  const titles = formData.getAll("levelTitle").map((v) => String(v).trim());
-  const levels: StampLevel[] = [];
-  for (let i = 0; i < Math.max(ats.length, titles.length); i++) {
-    const atText = ats[i] ?? "";
-    const title = titles[i] ?? "";
-    if (!atText && !title) continue;
-    const at = Number(atText);
-    if (!Number.isInteger(at) || at < 1 || at > LEVEL_MAX_AT) {
-      return { levels, error: `Cada nivel necesita un número de sello entre 1 y ${LEVEL_MAX_AT}.` };
-    }
-    if (title.length < 2 || title.length > 60) return { levels, error: "Cada nivel necesita un premio (2 a 60 letras)." };
-    if (levels.some((l) => l.at === at)) return { levels, error: `Hay dos niveles en el sello ${at}.` };
-    levels.push({ at, title });
-  }
-  if (levels.length > MAX_LEVELS) return { levels, error: `Máximo ${MAX_LEVELS} niveles.` };
-  levels.sort((a, b) => a.at - b.at);
-  if (levels.length > 0 && levels[levels.length - 1].at < 2) {
-    return { levels, error: "La tarjeta debe tener al menos 2 sellos." };
-  }
-  return { levels };
-}
-
 export async function saveProgramAction(_prev: FormState, formData: FormData): Promise<FormState> {
   await requireOwner();
   const businessName = text(formData, "businessName");
   const rewardTerms = text(formData, "rewardTerms");
   const stampsEnabled = formData.get("stampsEnabled") === "on";
   const pointsEnabled = formData.get("pointsEnabled") === "on";
+  const stampsRequired = intField(formData, "stampsRequired");
+  const rewardTitle = text(formData, "rewardTitle");
   const welcomeStamps = intField(formData, "welcomeStamps");
   const cooldownMinutes = intField(formData, "cooldownMinutes");
   const earnAmount = intField(formData, "earnAmount");
   const earnPoints = intField(formData, "earnPoints");
-  const { levels, error: levelsError } = readLevels(formData);
 
   const fieldErrors: Record<string, string> = {};
   if (businessName.length < 2 || businessName.length > 40) fieldErrors.businessName = "De 2 a 40 caracteres.";
   if (rewardTerms.length > 300) fieldErrors.rewardTerms = "Máximo 300 caracteres.";
   if (!stampsEnabled && !pointsEnabled) fieldErrors.programs = "Activa al menos un programa: sellos o puntos.";
-  if (levelsError) fieldErrors.levels = levelsError;
-  else if (stampsEnabled && levels.length === 0) fieldErrors.levels = "Agrega al menos un nivel a la tarjeta de sellos.";
-  const length = levels.length ? levels[levels.length - 1].at : 0;
-  if (!(welcomeStamps >= 0 && welcomeStamps <= 10) || (length > 0 && welcomeStamps >= length)) {
+  if (!(stampsRequired >= STAMPS_MIN && stampsRequired <= STAMPS_MAX)) {
+    fieldErrors.stampsRequired = `Elige entre ${STAMPS_MIN} y ${STAMPS_MAX} sellos.`;
+  }
+  if (rewardTitle.length < 2 || rewardTitle.length > 60) fieldErrors.rewardTitle = "Escribe la recompensa (2 a 60 letras).";
+  if (!(welcomeStamps >= 0 && welcomeStamps < Math.max(stampsRequired, 1))) {
     fieldErrors.welcomeStamps = "Debe ser menor que los sellos de la tarjeta.";
   }
   if (!(cooldownMinutes >= 0 && cooldownMinutes <= 1440)) fieldErrors.cooldownMinutes = "De 0 a 1440 minutos.";
@@ -350,12 +325,13 @@ export async function saveProgramAction(_prev: FormState, formData: FormData): P
     businessName,
     rewardTerms,
     stampsEnabled,
+    stampsRequired,
+    rewardTitle,
     pointsEnabled,
     welcomeStamps,
     cooldownMinutes,
     earnAmount,
     earnPoints,
-    levels,
   });
   refresh();
   return { ok: true, message: "Programa actualizado.", at: Date.now() };

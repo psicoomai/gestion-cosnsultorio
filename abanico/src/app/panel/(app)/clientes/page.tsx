@@ -47,7 +47,7 @@ export default async function CustomersPage({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold">Clientes</h1>
-          <p className="mt-1 text-tinta/60">
+          <p className="mt-1 text-cafe/60">
             {total} {total === 1 ? "cliente registrado" : "clientes registrados"}
           </p>
         </div>
@@ -71,9 +71,9 @@ export default async function CustomersPage({
       </form>
 
       {shown.length === 0 ? (
-        <div className="rounded-2xl bg-papel px-6 py-10 text-center ring-1 ring-tinta/10">
+        <div className="rounded-2xl bg-papel px-6 py-10 text-center ring-1 ring-cafe/10">
           <p className="font-display text-xl">{query ? "Sin resultados" : "Aún no hay clientes"}</p>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-tinta/60">
+          <p className="mx-auto mt-2 max-w-sm text-sm text-cafe/60">
             {query
               ? `Nadie coincide con “${query}”.`
               : "Imprime el cartel con el QR de registro y ponlo en caja para que tus clientes se unan."}

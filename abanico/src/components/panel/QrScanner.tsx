@@ -123,7 +123,7 @@ export function QrScanner() {
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-square w-full overflow-hidden rounded-[1.6rem] bg-tinta sm:aspect-[4/3]">
+      <div className="relative aspect-square w-full overflow-hidden rounded-[1.6rem] bg-cafe sm:aspect-[4/3]">
         <video
           ref={videoRef}
           className={active ? "h-full w-full object-cover" : "hidden"}
@@ -133,16 +133,16 @@ export function QrScanner() {
         />
         {active ? (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="h-[62%] w-[62%] rounded-3xl border-4 border-papel/90 shadow-[0_0_0_9999px_rgb(42_33_28/0.35)]" />
-            <p className="absolute bottom-4 rounded-full bg-tinta/70 px-4 py-1.5 text-sm font-semibold text-papel">
+            <div className="h-[62%] w-[62%] rounded-3xl border-4 border-papel/90 shadow-[0_0_0_9999px_rgb(60_36_21/0.4)]" />
+            <p className="absolute bottom-4 rounded-full bg-limon px-4 py-1.5 text-sm font-semibold text-cafe">
               {status === "found" ? "¡Tarjeta encontrada!" : status === "starting" ? "Abriendo cámara…" : "Apunta al QR del cliente"}
             </p>
           </div>
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center text-papel">
-            <ScanIcon className="h-14 w-14 text-papel/70" />
-            <p className="max-w-xs text-sm text-papel/75">Escanea el código QR que aparece en la tarjeta del cliente.</p>
-            <Button size="lg" onClick={start}>
+          <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center text-crema">
+            <ScanIcon className="h-14 w-14 text-limon" />
+            <p className="max-w-xs text-sm text-crema/75">Escanea el código QR que aparece en la tarjeta del cliente.</p>
+            <Button size="lg" variant="reward" onClick={start}>
               Escanear tarjeta
             </Button>
           </div>

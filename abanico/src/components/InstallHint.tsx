@@ -31,8 +31,8 @@ export function InstallHint() {
   if (platform === "installed") return null;
 
   return (
-    <div className="rounded-2xl bg-arena/50 px-5 py-4 text-sm leading-relaxed text-tinta/80">
-      <p className="font-semibold text-tinta">Ten tu tarjeta siempre a la mano</p>
+    <div className="rounded-2xl bg-limon-suave/50 px-5 py-4 text-sm leading-relaxed text-cafe/80">
+      <p className="font-semibold text-cafe">Ten tu tarjeta siempre a la mano</p>
       {prompt ? (
         <div className="mt-3">
           <Button size="sm" variant="secondary" onClick={() => prompt.prompt().finally(() => setPrompt(null))}>

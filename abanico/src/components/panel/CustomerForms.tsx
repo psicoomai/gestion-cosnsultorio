@@ -38,7 +38,7 @@ export function EditCustomerForm({
         <Input id="edit-phone" name="phone" type="tel" inputMode="tel" defaultValue={phone} required />
       </Field>
       <fieldset className="space-y-1.5">
-        <legend className="text-sm font-semibold text-tinta/85">Cumpleaños</legend>
+        <legend className="text-sm font-semibold text-cafe/85">Cumpleaños</legend>
         <div className="grid grid-cols-[6rem_1fr] gap-3">
           <Input name="day" inputMode="numeric" placeholder="Día" maxLength={2} defaultValue={day} aria-label="Día" />
           <select name="month" defaultValue={month} className={cx(inputClass, "appearance-none")} aria-label="Mes">
@@ -50,7 +50,7 @@ export function EditCustomerForm({
             ))}
           </select>
         </div>
-        {e.birthday ? <p className="text-sm font-medium text-terracota-oscuro">{e.birthday}</p> : null}
+        {e.birthday ? <p className="text-sm font-medium text-alerta">{e.birthday}</p> : null}
       </fieldset>
       <SubmitButton variant="secondary">Guardar datos</SubmitButton>
       <FormMessage state={state} />
@@ -63,7 +63,7 @@ export function RemovePointsForm({ customerId, points }: { customerId: number; p
   return (
     <ActionForm action={action} className="space-y-2">
       <input type="hidden" name="customerId" value={customerId} />
-      <label htmlFor="remove-points" className="block text-sm font-semibold text-tinta/85">
+      <label htmlFor="remove-points" className="block text-sm font-semibold text-cafe/85">
         Restar puntos por error
       </label>
       <div className="flex gap-2">
@@ -80,7 +80,7 @@ export function RemovePointsForm({ customerId, points }: { customerId: number; p
         </SubmitButton>
       </div>
       {state.fieldErrors?.points ? (
-        <p className="text-sm font-medium text-terracota-oscuro">{state.fieldErrors.points}</p>
+        <p className="text-sm font-medium text-alerta">{state.fieldErrors.points}</p>
       ) : null}
       <FormMessage state={state} />
     </ActionForm>
@@ -98,7 +98,7 @@ export function DeleteCustomerForm({ customerId, name }: { customerId: number; n
     );
   }
   return (
-    <ActionForm action={action} className="space-y-3 rounded-2xl bg-terracota/[0.06] p-4 ring-1 ring-terracota/25">
+    <ActionForm action={action} className="space-y-3 rounded-2xl bg-alerta/[0.05] p-4 ring-1 ring-alerta/25">
       <input type="hidden" name="customerId" value={customerId} />
       <p className="text-sm leading-relaxed">
         Se borrarán los datos de <strong>{name}</strong>, su tarjeta, sus sellos, puntos e historial. Esto no se puede
@@ -106,7 +106,7 @@ export function DeleteCustomerForm({ customerId, name }: { customerId: number; n
       </p>
       <Input name="confirm" autoComplete="off" autoCapitalize="characters" aria-label="Escribe BORRAR" />
       {state.fieldErrors?.confirm ? (
-        <p className="text-sm font-medium text-terracota-oscuro">{state.fieldErrors.confirm}</p>
+        <p className="text-sm font-medium text-alerta">{state.fieldErrors.confirm}</p>
       ) : null}
       <div className="flex gap-2">
         <SubmitButton variant="danger" size="sm" pendingText="Borrando…">

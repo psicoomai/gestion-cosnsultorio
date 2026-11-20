@@ -3,63 +3,32 @@ import { describe, it } from "node:test";
 import { parseBirthday, formatBirthday } from "../src/lib/birthday.ts";
 import { formatCardCode, normalizeCardCode, tokenFromScan } from "../src/lib/card-code.ts";
 import { formatPhone, normalizePhone } from "../src/lib/phone.ts";
-import {
-  applyStamps,
-  cardLength,
-  cooldownRemainingMinutes,
-  nextLevel,
-  parseMoneyToCents,
-  pointsForPurchase,
-} from "../src/lib/stamps.ts";
+import { applyStamps, cooldownRemainingMinutes, parseMoneyToCents, pointsForPurchase } from "../src/lib/stamps.ts";
 import { dayKey, startOfDay } from "../src/lib/time.ts";
 
-const LEVELS = [
-  { at: 5, title: "Café −25 %" },
-  { at: 12, title: "Café gratis" },
-  { at: 25, title: "Taza con el logo" },
-];
-
-describe("tarjeta de sellos por niveles", () => {
-  it("la tarjeta mide lo que el nivel más alto", () => {
-    assert.equal(cardLength(LEVELS), 25);
+describe("tarjeta de sellos", () => {
+  it("suma sellos sin premio mientras no se completa", () => {
+    assert.deepEqual(applyStamps(0, 1, 10), { stamps: 1, rewardsEarned: 0 });
+    assert.deepEqual(applyStamps(4, 3, 10), { stamps: 7, rewardsEarned: 0 });
   });
 
-  it("gana el premio al llegar exactamente al sello del nivel", () => {
-    assert.deepEqual(applyStamps(3, 1, LEVELS), { stamps: 4, earned: [], cardsCompleted: 0 });
-    assert.deepEqual(applyStamps(4, 1, LEVELS), { stamps: 5, earned: ["Café −25 %"], cardsCompleted: 0 });
-    assert.deepEqual(applyStamps(11, 1, LEVELS), { stamps: 12, earned: ["Café gratis"], cardsCompleted: 0 });
+  it("al completar la tarjeta gana la recompensa y vuelve a empezar", () => {
+    assert.deepEqual(applyStamps(9, 1, 10), { stamps: 0, rewardsEarned: 1 });
+    assert.deepEqual(applyStamps(8, 4, 10), { stamps: 2, rewardsEarned: 1 });
   });
 
-  it("al completar el último nivel la tarjeta vuelve a empezar", () => {
-    assert.deepEqual(applyStamps(24, 1, LEVELS), { stamps: 0, earned: ["Taza con el logo"], cardsCompleted: 1 });
-    assert.deepEqual(applyStamps(23, 3, LEVELS), { stamps: 1, earned: ["Taza con el logo"], cardsCompleted: 1 });
-  });
-
-  it("varios sellos de golpe pueden cruzar varios niveles", () => {
-    assert.deepEqual(applyStamps(4, 8, LEVELS), { stamps: 12, earned: ["Café −25 %", "Café gratis"], cardsCompleted: 0 });
-  });
-
-  it("una tarjeta clásica de un solo nivel funciona igual", () => {
-    const classic = [{ at: 10, title: "Producto gratis" }];
-    assert.deepEqual(applyStamps(9, 1, classic), { stamps: 0, earned: ["Producto gratis"], cardsCompleted: 1 });
-    assert.deepEqual(applyStamps(0, 1, classic), { stamps: 1, earned: [], cardsCompleted: 0 });
+  it("muchos sellos de golpe pueden completar más de una tarjeta", () => {
+    assert.deepEqual(applyStamps(5, 10, 6), { stamps: 3, rewardsEarned: 2 });
   });
 
   it("si la tarjeta se acortó, el cliente queda a un sello de completarla", () => {
-    const shorter = [{ at: 8, title: "Premio" }];
-    assert.deepEqual(applyStamps(15, 1, shorter), { stamps: 0, earned: ["Premio"], cardsCompleted: 1 });
+    assert.deepEqual(applyStamps(15, 1, 8), { stamps: 0, rewardsEarned: 1 });
   });
 
   it("rechaza cantidades inválidas", () => {
-    assert.throws(() => applyStamps(0, 0, LEVELS));
-    assert.throws(() => applyStamps(0, 1.5, LEVELS));
-    assert.throws(() => applyStamps(0, 1, []));
-  });
-
-  it("calcula el siguiente nivel y cuánto falta", () => {
-    assert.deepEqual(nextLevel(0, LEVELS), { at: 5, title: "Café −25 %", remaining: 5 });
-    assert.deepEqual(nextLevel(5, LEVELS), { at: 12, title: "Café gratis", remaining: 7 });
-    assert.deepEqual(nextLevel(24, LEVELS), { at: 25, title: "Taza con el logo", remaining: 1 });
+    assert.throws(() => applyStamps(0, 0, 10));
+    assert.throws(() => applyStamps(0, 1.5, 10));
+    assert.throws(() => applyStamps(0, 1, 0));
   });
 
   it("respeta los minutos entre sellos", () => {

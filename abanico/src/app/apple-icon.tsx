@@ -9,12 +9,12 @@ const FAN =
 export default function AppleIcon() {
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#bf4e2b" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#3c2415" }}>
         <svg width="132" height="132" viewBox="0 0 24 24">
-          <path d={FAN} fill="#fffbf5" />
-          <path d="M12 19 L4.64 10.83 M12 19 L9.34 8.33 M12 19 L14.66 8.33 M12 19 L19.36 10.83" stroke="#bf4e2b" strokeWidth="0.9" strokeLinecap="round" />
-          <circle cx="12" cy="19" r="1.7" fill="#fffbf5" />
-          <path d="M12 19 L12 22.6" stroke="#fffbf5" strokeWidth="1.6" strokeLinecap="round" />
+          <path d={FAN} fill="#e5f77d" />
+          <path d="M12 19 L4.64 10.83 M12 19 L9.34 8.33 M12 19 L14.66 8.33 M12 19 L19.36 10.83" stroke="#3c2415" strokeWidth="0.9" strokeLinecap="round" />
+          <circle cx="12" cy="19" r="1.7" fill="#e5f77d" />
+          <path d="M12 19 L12 22.6" stroke="#e5f77d" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
       </div>
     ),

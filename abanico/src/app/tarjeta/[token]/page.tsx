@@ -78,7 +78,7 @@ export default async function CardPage({
 
       <header className="flex items-center justify-between">
         <Logo name={settings.businessName} />
-        <p className="text-sm text-tinta/60">Hola, {firstName}</p>
+        <p className="text-sm text-cafe/60">Hola, {firstName}</p>
       </header>
 
       <main className="mt-6 space-y-5">
@@ -90,12 +90,12 @@ export default async function CardPage({
         ) : null}
 
         {available.length > 0 || affordable.length > 0 ? (
-          <section className="animate-glow rounded-[1.6rem] bg-ocre px-5 py-5 text-tinta">
+          <section className="animate-glow rounded-[1.6rem] bg-limon px-5 py-5 text-cafe">
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-papel/60">
                 <GiftIcon className="h-6 w-6" />
               </span>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-tinta/70">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-cafe/70">
                 {available.length > 0
                   ? available.length === 1
                     ? "Tienes un premio esperándote"
@@ -111,11 +111,11 @@ export default async function CardPage({
               ))}
               {affordable.map((item) => (
                 <li key={`p${item.id}`} className="font-display text-lg leading-snug">
-                  {item.title} <span className="font-sans text-sm text-tinta/70">· {fmt.format(item.cost)} pts</span>
+                  {item.title} <span className="font-sans text-sm text-cafe/70">· {fmt.format(item.cost)} pts</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-sm leading-relaxed text-tinta/80">
+            <p className="mt-3 text-sm leading-relaxed text-cafe/80">
               Pídelo en caja mostrando tu código. Código de validación:{" "}
               <strong className="font-mono tracking-wider">{formatCardCode(customer.code)}</strong>
             </p>
@@ -127,7 +127,8 @@ export default async function CardPage({
             businessName={settings.businessName}
             customerName={customer.name}
             stamps={customer.stamps}
-            levels={settings.levels}
+            required={settings.stampsRequired}
+            rewardTitle={settings.rewardTitle}
           />
         ) : null}
 
@@ -140,17 +141,17 @@ export default async function CardPage({
           />
         ) : null}
 
-        <section className="rounded-[1.6rem] bg-papel px-5 py-6 text-center ring-1 ring-tinta/10" aria-labelledby="qr-title">
-          <h2 id="qr-title" className="font-sans text-sm font-semibold uppercase tracking-[0.16em] text-tinta/60">
+        <section className="rounded-[1.6rem] bg-papel px-5 py-6 text-center ring-1 ring-cafe/10" aria-labelledby="qr-title">
+          <h2 id="qr-title" className="font-sans text-sm font-semibold uppercase tracking-[0.16em] text-cafe/60">
             Muestra este código en caja
           </h2>
           <div
-            className="mx-auto mt-4 aspect-square w-full max-w-[15rem] rounded-2xl bg-white p-3 ring-1 ring-tinta/10 [&_svg]:h-full [&_svg]:w-full"
+            className="mx-auto mt-4 aspect-square w-full max-w-[15rem] rounded-2xl bg-white p-3 ring-1 ring-cafe/10 [&_svg]:h-full [&_svg]:w-full"
             role="img"
             aria-label="Código QR de tu tarjeta"
             dangerouslySetInnerHTML={{ __html: svg }}
           />
-          <p className="mt-4 text-xs text-tinta/55">Código de tarjeta</p>
+          <p className="mt-4 text-xs text-cafe/55">Código de tarjeta</p>
           <p className="font-mono text-2xl font-semibold tracking-[0.2em]">{formatCardCode(customer.code)}</p>
         </section>
 
@@ -158,10 +159,10 @@ export default async function CardPage({
 
         {activity.length > 0 ? (
           <section aria-labelledby="history-title">
-            <h2 id="history-title" className="mb-2 px-1 font-sans text-sm font-semibold uppercase tracking-[0.16em] text-tinta/60">
+            <h2 id="history-title" className="mb-2 px-1 font-sans text-sm font-semibold uppercase tracking-[0.16em] text-cafe/60">
               Tus visitas
             </h2>
-            <ul className="divide-y divide-tinta/10 rounded-2xl bg-papel px-5 ring-1 ring-tinta/10">
+            <ul className="divide-y divide-cafe/10 rounded-2xl bg-papel px-5 ring-1 ring-cafe/10">
               {activity.map((a) => {
                 const text = historyText(a);
                 if (!text) return null;
@@ -170,12 +171,12 @@ export default async function CardPage({
                     <span className={a.type === "reward_earned" || a.type === "reward_redeemed" ? "font-semibold" : ""}>
                       {text}
                     </span>
-                    <span className="shrink-0 text-tinta/50">{formatDateTime(a.createdAt)}</span>
+                    <span className="shrink-0 text-cafe/50">{formatDateTime(a.createdAt)}</span>
                   </li>
                 );
               })}
             </ul>
-            <p className="mt-3 px-1 text-xs text-tinta/50">
+            <p className="mt-3 px-1 text-xs text-cafe/50">
               {[
                 settings.stampsEnabled ? `${customer.totalStamps} ${customer.totalStamps === 1 ? "sello" : "sellos"} en total` : null,
                 settings.pointsEnabled ? `${fmt.format(customer.totalPoints)} puntos ganados` : null,
@@ -187,19 +188,19 @@ export default async function CardPage({
           </section>
         ) : null}
 
-        <section className="rounded-2xl px-1 text-xs leading-relaxed text-tinta/55">
+        <section className="rounded-2xl px-1 text-xs leading-relaxed text-cafe/55">
           <p>
-            <strong className="text-tinta/70">Condiciones:</strong> {settings.rewardTerms}
+            <strong className="text-cafe/70">Condiciones:</strong> {settings.rewardTerms}
           </p>
         </section>
       </main>
 
-      <footer className="mt-10 flex items-center justify-between gap-4 border-t border-tinta/10 pt-5 text-xs text-tinta/50">
-        <Link href="/privacidad" className="hover:text-tinta">
+      <footer className="mt-10 flex items-center justify-between gap-4 border-t border-cafe/10 pt-5 text-xs text-cafe/50">
+        <Link href="/privacidad" className="hover:text-cafe">
           Aviso de privacidad
         </Link>
         <form action={forgetCard}>
-          <button type="submit" className="hover:text-tinta">
+          <button type="submit" className="hover:text-cafe">
             ¿No es tu tarjeta? Salir
           </button>
         </form>

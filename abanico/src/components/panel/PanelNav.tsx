@@ -31,7 +31,7 @@ export function PanelNav() {
             href={href}
             className={cx(
               "rounded-lg px-3 py-2 text-sm font-semibold transition",
-              isActive(pathname, href) ? "bg-tinta text-papel" : "text-tinta/65 hover:bg-tinta/5 hover:text-tinta"
+              isActive(pathname, href) ? "bg-cafe text-crema" : "text-cafe/65 hover:bg-cafe/5 hover:text-cafe"
             )}
           >
             {label}
@@ -40,7 +40,7 @@ export function PanelNav() {
       </nav>
 
       <nav
-        className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-tinta/10 bg-papel/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-cafe/10 bg-papel/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
         aria-label="Panel"
       >
         <ul className="mx-auto grid max-w-md grid-cols-5">
@@ -53,14 +53,16 @@ export function PanelNav() {
                   href={href}
                   className={cx(
                     "flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold",
-                    active ? "text-terracota" : "text-tinta/55"
+                    active ? "text-cafe" : "text-cafe/60"
                   )}
                   aria-current={active ? "page" : undefined}
                 >
                   <span
                     className={cx(
                       "flex items-center justify-center",
-                      primary ? "-mt-6 h-12 w-12 rounded-full bg-terracota text-papel shadow-lg ring-4 ring-crema" : "h-6 w-6"
+                      primary
+                        ? "-mt-6 h-12 w-12 rounded-full bg-cafe text-limon shadow-lg ring-4 ring-crema"
+                        : cx("h-7 w-12 rounded-full", active && "bg-limon")
                     )}
                   >
                     <Icon className={primary ? "h-6 w-6" : "h-6 w-6"} />

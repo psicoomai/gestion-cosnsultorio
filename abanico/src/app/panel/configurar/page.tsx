@@ -18,7 +18,7 @@ export default async function SetupPage() {
     <main className="mx-auto max-w-md px-4 py-10">
       <Logo name="Abanico" />
       <h1 className="mt-8 text-3xl font-semibold">Configura tu programa de lealtad</h1>
-      <p className="mt-2 leading-relaxed text-tinta/65">
+      <p className="mt-2 leading-relaxed text-cafe/65">
         Crea la cuenta de la dueña o dueño del negocio. Después podrás configurar los sellos, los puntos y dar de alta a tu
         equipo.
       </p>

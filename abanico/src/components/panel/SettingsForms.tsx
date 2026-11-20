@@ -49,10 +49,10 @@ export function CatalogItemRow({ item }: { item: { id: number; title: string; co
         <Input name="title" defaultValue={item.title} maxLength={60} aria-label="Premio" />
         <div className="relative">
           <Input name="cost" inputMode="numeric" defaultValue={item.cost} aria-label="Puntos" className="pr-10" />
-          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-tinta/50">pts</span>
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-cafe/50">pts</span>
         </div>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="active" defaultChecked={item.active} className="h-5 w-5 accent-terracota" />
+          <input type="checkbox" name="active" defaultChecked={item.active} className="h-5 w-5 accent-cafe" />
           Visible
         </label>
         <SubmitButton variant="ghost" size="sm" pendingText="…">
@@ -106,9 +106,9 @@ export function StaffRow({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-semibold">
-            {member.name} {isSelf ? <span className="font-normal text-tinta/50">(tú)</span> : null}
+            {member.name} {isSelf ? <span className="font-normal text-cafe/50">(tú)</span> : null}
           </p>
-          <p className="text-sm text-tinta/55">
+          <p className="text-sm text-cafe/55">
             {member.username} · {member.role === "owner" ? "Dueña/o" : "Equipo"}
           </p>
         </div>
@@ -136,7 +136,7 @@ export function StaffRow({
           <div className="min-w-48 flex-1">
             <Input name="password" type="password" placeholder="Nueva contraseña" autoComplete="new-password" aria-label="Nueva contraseña" />
             {state.fieldErrors?.password ? (
-              <p className="mt-1 text-sm font-medium text-terracota-oscuro">{state.fieldErrors.password}</p>
+              <p className="mt-1 text-sm font-medium text-alerta">{state.fieldErrors.password}</p>
             ) : null}
           </div>
           <SubmitButton variant="secondary" pendingText="…">

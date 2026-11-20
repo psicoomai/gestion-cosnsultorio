@@ -28,14 +28,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
         <h1 className="text-3xl font-semibold">Ajustes</h1>
-        <p className="mt-1 text-tinta/60">
+        <p className="mt-1 text-cafe/60">
           {isOwner ? "Configura tu programa de lealtad y a tu equipo." : "Tu cuenta del panel."}
         </p>
       </div>
 
       {inicio ? (
         <Notice tone="success">
-          <strong>¡Tu cuenta está lista!</strong> Revisa los niveles de sellos y el catálogo de puntos (vienen con ejemplos),
+          <strong>¡Tu cuenta está lista!</strong> Revisa cuántos sellos lleva la tarjeta, su recompensa y el catálogo de puntos (vienen con ejemplos),
           da de alta a tu equipo e imprime el{" "}
           <Link href="/panel/cartel" className="font-semibold underline">
             cartel con el QR
@@ -58,40 +58,41 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 cooldownMinutes: settings.cooldownMinutes,
                 earnAmount: settings.earnAmount,
                 earnPoints: settings.earnPoints,
-                levels: settings.levels.map(({ at, title }) => ({ at, title })),
+                stampsRequired: settings.stampsRequired,
+                rewardTitle: settings.rewardTitle,
               }}
             />
           </Card>
 
           <Card>
             <h2 className="text-2xl font-semibold">Catálogo de puntos</h2>
-            <p className="mt-1 text-sm text-tinta/60">
+            <p className="mt-1 text-sm text-cafe/60">
               Premios que tus clientes pueden cambiar por puntos. Desmarca “Visible” para ocultar uno sin borrarlo.
             </p>
             {catalog.length > 0 ? (
-              <div className="mt-3 divide-y divide-tinta/10">
+              <div className="mt-3 divide-y divide-cafe/10">
                 {catalog.map((item) => (
                   <CatalogItemRow key={item.id} item={item} />
                 ))}
               </div>
             ) : null}
-            <div className="mt-4 border-t border-tinta/10 pt-4">
+            <div className="mt-4 border-t border-cafe/10 pt-4">
               <AddCatalogItemForm />
             </div>
           </Card>
 
           <Card>
             <h2 className="text-2xl font-semibold">Equipo</h2>
-            <p className="mt-1 text-sm text-tinta/60">
+            <p className="mt-1 text-sm text-cafe/60">
               Cada persona entra con su usuario para registrar compras y canjear premios. Solo tú puedes cambiar el
               programa, borrar clientes y exportar datos.
             </p>
-            <ul className="mt-3 divide-y divide-tinta/10">
+            <ul className="mt-3 divide-y divide-cafe/10">
               {team.map((member) => (
                 <StaffRow key={member.id} member={member} isSelf={member.id === staff.id} />
               ))}
             </ul>
-            <div className="mt-4 border-t border-tinta/10 pt-4">
+            <div className="mt-4 border-t border-cafe/10 pt-4">
               <h3 className="mb-3 font-sans text-base font-bold">Agregar a alguien del equipo</h3>
               <AddStaffForm />
             </div>
@@ -101,7 +102,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       <Card>
         <h2 className="text-2xl font-semibold">Mi cuenta</h2>
-        <p className="mb-4 mt-1 text-sm text-tinta/60">
+        <p className="mb-4 mt-1 text-sm text-cafe/60">
           {staff.name} · usuario <strong>{staff.username}</strong>
         </p>
         <ChangePasswordForm />

@@ -17,7 +17,7 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
     <div className="mx-auto max-w-xl space-y-6">
       <div>
         <h1 className="text-3xl font-semibold">Caja</h1>
-        <p className="mt-1 text-tinta/65">
+        <p className="mt-1 text-cafe/65">
           Escanea la tarjeta del cliente para {settings.stampsEnabled ? "darle sellos" : "sumarle puntos"} o canjear un premio.
         </p>
       </div>
@@ -29,7 +29,7 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
       <QrScanner />
 
       <section aria-labelledby="buscar" className="space-y-3">
-        <h2 id="buscar" className="font-sans text-sm font-semibold uppercase tracking-[0.16em] text-tinta/60">
+        <h2 id="buscar" className="font-sans text-sm font-semibold uppercase tracking-[0.16em] text-cafe/60">
           O busca al cliente
         </h2>
         <form className="flex gap-2" action="/panel/sellar">
@@ -53,7 +53,7 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
           results.length > 0 ? (
             <CustomerList customers={results} settings={settings} />
           ) : (
-            <p className="rounded-2xl bg-papel px-5 py-4 text-sm text-tinta/65 ring-1 ring-tinta/10">
+            <p className="rounded-2xl bg-papel px-5 py-4 text-sm text-cafe/65 ring-1 ring-cafe/10">
               No hay clientes que coincidan con “{query}”. Si aún no tiene tarjeta, pídele que escanee el QR de registro.
             </p>
           )

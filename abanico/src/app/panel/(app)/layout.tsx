@@ -17,16 +17,16 @@ export default async function PanelLayout({ children }: { children: React.ReactN
 
   return (
     <div className="min-h-dvh pb-24 md:pb-10">
-      <header className="no-print sticky top-0 z-20 border-b border-tinta/10 bg-crema/90 backdrop-blur">
+      <header className="no-print sticky top-0 z-20 border-b border-cafe/10 bg-crema/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/panel" aria-label="Inicio del panel">
             <Logo name={settings.businessName} />
           </Link>
           <PanelNav />
           <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-tinta/60 sm:inline">{staff.name}</span>
+            <span className="hidden text-cafe/60 sm:inline">{staff.name}</span>
             <form action={logout}>
-              <button type="submit" className="rounded-lg px-2 py-1 font-semibold text-tinta/60 hover:bg-tinta/5 hover:text-tinta">
+              <button type="submit" className="rounded-lg px-2 py-1 font-semibold text-cafe/60 hover:bg-cafe/5 hover:text-cafe">
                 Salir
               </button>
             </form>

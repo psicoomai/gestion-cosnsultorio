@@ -4,22 +4,21 @@ import { ActionForm } from "@/components/ActionForm";
 import { useActionState, useState } from "react";
 import { FormMessage } from "@/components/panel/FormMessage";
 import { SubmitButton } from "@/components/SubmitButton";
-import { Button, Field, Input, Textarea, cx } from "@/components/ui";
+import { Field, Input, Textarea, cx } from "@/components/ui";
 import { saveProgramAction, type FormState } from "@/lib/actions/panel";
-import { LEVEL_MAX_AT, MAX_LEVELS } from "@/lib/stamps";
-
-type LevelRow = { key: number; at: string; title: string };
+import { STAMPS_MAX, STAMPS_MIN } from "@/lib/stamps";
 
 export type ProgramValues = {
   businessName: string;
   rewardTerms: string;
   stampsEnabled: boolean;
+  stampsRequired: number;
+  rewardTitle: string;
   pointsEnabled: boolean;
   welcomeStamps: number;
   cooldownMinutes: number;
   earnAmount: number;
   earnPoints: number;
-  levels: { at: number; title: string }[];
 };
 
 function Toggle({
@@ -39,7 +38,7 @@ function Toggle({
     <label
       className={cx(
         "flex cursor-pointer items-start gap-3 rounded-2xl p-4 ring-1 transition",
-        checked ? "bg-terracota/[0.06] ring-terracota/40" : "bg-white ring-tinta/15"
+        checked ? "bg-limon-suave ring-cafe/30" : "bg-white ring-cafe/15"
       )}
     >
       <input
@@ -47,11 +46,11 @@ function Toggle({
         name={name}
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 h-5 w-5 shrink-0 accent-terracota"
+        className="mt-0.5 h-5 w-5 shrink-0 accent-cafe"
       />
       <span>
         <span className="block font-semibold">{label}</span>
-        <span className="block text-sm text-tinta/60">{description}</span>
+        <span className="block text-sm text-cafe/60">{description}</span>
       </span>
     </label>
   );
@@ -61,23 +60,7 @@ export function ProgramForm({ initial }: { initial: ProgramValues }) {
   const [state, action] = useActionState<FormState, FormData>(saveProgramAction, {});
   const [stampsEnabled, setStampsEnabled] = useState(initial.stampsEnabled);
   const [pointsEnabled, setPointsEnabled] = useState(initial.pointsEnabled);
-  const [levels, setLevels] = useState<LevelRow[]>(() =>
-    initial.levels.map((l, i) => ({ key: i, at: String(l.at), title: l.title }))
-  );
-  const [nextKey, setNextKey] = useState(initial.levels.length);
   const e = state.fieldErrors ?? {};
-
-  const sortedPreview = levels
-    .map((l) => ({ at: Number(l.at), title: l.title.trim() }))
-    .filter((l) => Number.isInteger(l.at) && l.at > 0 && l.title)
-    .sort((a, b) => a.at - b.at);
-  const length = sortedPreview.length ? sortedPreview[sortedPreview.length - 1].at : 0;
-
-  const addLevel = () => {
-    const last = Math.max(0, ...levels.map((l) => Number(l.at) || 0));
-    setLevels([...levels, { key: nextKey, at: String(Math.min(last + 5, LEVEL_MAX_AT)), title: "" }]);
-    setNextKey(nextKey + 1);
-  };
 
   return (
     <ActionForm action={action} className="space-y-6">
@@ -86,14 +69,14 @@ export function ProgramForm({ initial }: { initial: ProgramValues }) {
       </Field>
 
       <div className="space-y-2">
-        <p className="text-sm font-semibold text-tinta/85">Programas activos</p>
+        <p className="text-sm font-semibold text-cafe/85">Programas activos</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <Toggle
             name="stampsEnabled"
             checked={stampsEnabled}
             onChange={setStampsEnabled}
-            label="Tarjeta de sellos por niveles"
-            description="Un sello por compra y premios en sellos específicos."
+            label="Tarjeta de sellos"
+            description="Un sello por compra; al completarla gana la recompensa."
           />
           <Toggle
             name="pointsEnabled"
@@ -103,55 +86,25 @@ export function ProgramForm({ initial }: { initial: ProgramValues }) {
             description="Puntos según lo que gasta, para cambiar por premios."
           />
         </div>
-        {e.programs ? <p className="text-sm font-medium text-terracota-oscuro">{e.programs}</p> : null}
+        {e.programs ? <p className="text-sm font-medium text-alerta">{e.programs}</p> : null}
       </div>
 
-      <fieldset className={cx("space-y-4 rounded-2xl p-4 ring-1 ring-tinta/10 sm:p-5", !stampsEnabled && "opacity-60")}>
-        <legend className="px-1 font-sans text-base font-bold">Niveles de la tarjeta de sellos</legend>
-        <p className="text-sm text-tinta/60">
-          Cada nivel entrega un premio al llegar a ese sello. El nivel más alto completa la tarjeta y vuelve a empezar.
-          {length > 0 ? ` Tu tarjeta tiene ${length} sellos.` : ""}
-        </p>
-        <ul className="space-y-2">
-          {levels.map((level, index) => (
-            <li key={level.key} className="flex items-center gap-2">
-              <div className="relative w-[4.5rem] shrink-0">
-                <Input
-                  name="levelAt"
-                  inputMode="numeric"
-                  value={level.at}
-                  onChange={(ev) =>
-                    setLevels(levels.map((l, i) => (i === index ? { ...l, at: ev.target.value.replace(/\D/g, "") } : l)))
-                  }
-                  aria-label={`Sello del nivel ${index + 1}`}
-                  className="px-2 pr-6 text-center"
-                />
-                <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-sm text-tinta/50">º</span>
-              </div>
-              <Input
-                name="levelTitle"
-                value={level.title}
-                onChange={(ev) => setLevels(levels.map((l, i) => (i === index ? { ...l, title: ev.target.value } : l)))}
-                placeholder="Premio, p. ej. Café gratis"
-                maxLength={60}
-                aria-label={`Premio del nivel ${index + 1}`}
-              />
-              <button
-                type="button"
-                className="flex h-12 w-10 shrink-0 items-center justify-center rounded-xl text-2xl leading-none text-tinta/50 hover:bg-tinta/5 hover:text-terracota-oscuro"
-                onClick={() => setLevels(levels.filter((_, i) => i !== index))}
-                aria-label={`Quitar nivel ${index + 1}`}
-                title="Quitar nivel"
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-        {e.levels ? <p className="text-sm font-medium text-terracota-oscuro">{e.levels}</p> : null}
-        <Button type="button" variant="secondary" size="sm" onClick={addLevel} disabled={levels.length >= MAX_LEVELS}>
-          + Agregar nivel
-        </Button>
+      <fieldset className={cx("space-y-4 rounded-2xl p-4 ring-1 ring-cafe/10 sm:p-5", !stampsEnabled && "opacity-60")}>
+        <legend className="px-1 font-sans text-base font-bold">Tarjeta de sellos</legend>
+        <p className="text-sm text-cafe/60">Al completar la tarjeta, el cliente gana la recompensa y la tarjeta vuelve a empezar.</p>
+        <div className="grid gap-4 sm:grid-cols-[10rem_1fr]">
+          <Field
+            label="Sellos para completarla"
+            htmlFor="stampsRequired"
+            error={e.stampsRequired}
+            hint={`De ${STAMPS_MIN} a ${STAMPS_MAX}.`}
+          >
+            <Input id="stampsRequired" name="stampsRequired" inputMode="numeric" defaultValue={initial.stampsRequired} />
+          </Field>
+          <Field label="Recompensa" htmlFor="rewardTitle" error={e.rewardTitle} hint="Por ejemplo: Bebida gratis.">
+            <Input id="rewardTitle" name="rewardTitle" defaultValue={initial.rewardTitle} maxLength={60} />
+          </Field>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
@@ -173,7 +126,7 @@ export function ProgramForm({ initial }: { initial: ProgramValues }) {
         </div>
       </fieldset>
 
-      <fieldset className={cx("space-y-3 rounded-2xl p-4 ring-1 ring-tinta/10 sm:p-5", !pointsEnabled && "opacity-60")}>
+      <fieldset className={cx("space-y-3 rounded-2xl p-4 ring-1 ring-cafe/10 sm:p-5", !pointsEnabled && "opacity-60")}>
         <legend className="px-1 font-sans text-base font-bold">Cómo se ganan los puntos</legend>
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span>El cliente gana</span>
@@ -186,8 +139,8 @@ export function ProgramForm({ initial }: { initial: ProgramValues }) {
           </div>
           <span>de compra.</span>
         </div>
-        {e.earn ? <p className="text-sm font-medium text-terracota-oscuro">{e.earn}</p> : null}
-        <p className="text-sm text-tinta/60">Los premios que se cambian por puntos se configuran en el catálogo de abajo.</p>
+        {e.earn ? <p className="text-sm font-medium text-alerta">{e.earn}</p> : null}
+        <p className="text-sm text-cafe/60">Los premios que se cambian por puntos se configuran en el catálogo de abajo.</p>
       </fieldset>
 
       <Field

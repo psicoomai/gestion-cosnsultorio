@@ -18,19 +18,14 @@ const SCHEMA = [
     business_name TEXT NOT NULL,
     reward_terms TEXT NOT NULL,
     stamps_enabled INTEGER NOT NULL DEFAULT 1,
+    stamps_required INTEGER NOT NULL DEFAULT 10,
+    reward_title TEXT NOT NULL DEFAULT 'Un producto de cortesía',
     points_enabled INTEGER NOT NULL DEFAULT 1,
     welcome_stamps INTEGER NOT NULL DEFAULT 0,
     cooldown_minutes INTEGER NOT NULL DEFAULT 0,
     earn_amount INTEGER NOT NULL DEFAULT 10,
     earn_points INTEGER NOT NULL DEFAULT 1,
     updated_at INTEGER NOT NULL
-  )`,
-  // Niveles de la tarjeta de sellos: premio al llegar al sello número `at`.
-  // El nivel más alto marca el final de la tarjeta (vuelve a empezar).
-  `CREATE TABLE IF NOT EXISTS stamp_levels (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    at INTEGER NOT NULL UNIQUE,
-    title TEXT NOT NULL
   )`,
   // Catálogo de premios que se cambian por puntos.
   `CREATE TABLE IF NOT EXISTS point_rewards (
@@ -95,12 +90,7 @@ const SCHEMA = [
   `CREATE INDEX IF NOT EXISTS activity_customer ON activity(customer_id, created_at)`,
 ];
 
-/** Programa inicial (editable en Ajustes): niveles de sellos y catálogo de puntos de ejemplo. */
-const DEFAULT_LEVELS: [number, string][] = [
-  [5, "Café con 25 % de descuento"],
-  [12, "Café gratis"],
-  [25, "Taza con el logo"],
-];
+/** Catálogo de puntos inicial (editable en Ajustes). */
 const DEFAULT_CATALOG: [string, number][] = [
   ["Café", 100],
   ["Sándwich", 500],
@@ -135,10 +125,6 @@ async function init(client: Client): Promise<Client> {
   if (seeded.rowsAffected > 0) {
     await client.batch(
       [
-        ...DEFAULT_LEVELS.map(([at, title]) => ({
-          sql: "INSERT OR IGNORE INTO stamp_levels (at, title) VALUES (?, ?)",
-          args: [at, title],
-        })),
         ...DEFAULT_CATALOG.map(([title, cost]) => ({
           sql: "INSERT INTO point_rewards (title, cost, created_at) VALUES (?, ?, ?)",
           args: [title, cost, now],

@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Tu tarjeta de sellos de Abanico.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f6efe4",
-    theme_color: "#f6efe4",
+    background_color: "#faf8ee",
+    theme_color: "#faf8ee",
     icons: [
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
       { src: "/apple-icon", sizes: "180x180", type: "image/png" },

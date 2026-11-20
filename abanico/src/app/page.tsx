@@ -15,8 +15,7 @@ export default async function HomePage() {
   if (saved && (await getCustomerByToken(saved))) redirect(`/tarjeta/${saved}`);
 
   const settings = await getSettings();
-  const firstLevel = settings.levels[0];
-  const demoStamps = firstLevel ? Math.max(1, firstLevel.at - 1) : 0;
+  const demoStamps = Math.max(1, settings.stampsRequired - 3);
   const demoPoints = settings.catalog[0] ? Math.round(settings.catalog[0].cost * 0.7) : 70;
 
   const steps: [string, string, string][] = [
@@ -35,18 +34,20 @@ export default async function HomePage() {
     <div className="mx-auto flex min-h-dvh max-w-5xl flex-col px-4 sm:px-8">
       <header className="flex items-center justify-between py-5">
         <Logo name={settings.businessName} />
-        <Link href="/panel" className="text-sm font-medium text-tinta/60 hover:text-tinta">
+        <Link href="/panel" className="text-sm font-medium text-cafe/60 hover:text-cafe">
           Equipo
         </Link>
       </header>
 
       <main className="flex flex-1 flex-col justify-center gap-12 py-8 md:flex-row md:items-center md:gap-16 md:py-16">
         <section className="animate-float-up md:max-w-md md:flex-1">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-terracota">Programa de lealtad</p>
+          <p className="inline-block rounded-full bg-limon-suave px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cafe ring-1 ring-limon">
+            Programa de lealtad
+          </p>
           <h1 className="mt-3 text-[2.6rem] font-semibold leading-[1.05] sm:text-5xl">
-            Cada visita <span className="italic text-terracota">suma</span>.
+            Cada visita <span className="relative z-0 whitespace-nowrap italic">suma<span aria-hidden="true" className="absolute inset-x-[-0.12em] bottom-[0.06em] -z-10 h-[0.42em] rounded-sm bg-limon" /></span>.
           </h1>
-          <p className="mt-5 text-lg leading-relaxed text-tinta/70">
+          <p className="mt-5 text-lg leading-relaxed text-cafe/70">
             {programSummary(settings)} Tu tarjeta vive en tu celular: sin app y sin cartón que se pierde.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -54,7 +55,7 @@ export default async function HomePage() {
               Obtener mi tarjeta
             </Link>
           </div>
-          <p className="mt-4 text-sm text-tinta/55">
+          <p className="mt-4 text-sm text-cafe/55">
             ¿Ya tienes tarjeta en otro celular? Pide en caja que te la manden por WhatsApp.
           </p>
         </section>
@@ -66,7 +67,8 @@ export default async function HomePage() {
                 businessName={settings.businessName}
                 customerName="Así se ve tu tarjeta"
                 stamps={demoStamps}
-                levels={settings.levels}
+                required={settings.stampsRequired}
+                rewardTitle={settings.rewardTitle}
               />
             </div>
           ) : null}
@@ -83,25 +85,25 @@ export default async function HomePage() {
         </section>
       </main>
 
-      <section className="grid gap-4 border-t border-tinta/10 py-10 sm:grid-cols-3">
+      <section className="grid gap-4 border-t border-cafe/10 py-10 sm:grid-cols-3">
         {steps.map(([n, title, body]) => (
           <div key={n} className="flex gap-4">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-terracota/10 font-display text-lg font-semibold text-terracota">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-limon font-display text-lg font-semibold text-cafe">
               {n}
             </span>
             <div>
               <h2 className="font-sans text-base font-semibold">{title}</h2>
-              <p className="mt-1 text-sm leading-relaxed text-tinta/65">{body}</p>
+              <p className="mt-1 text-sm leading-relaxed text-cafe/65">{body}</p>
             </div>
           </div>
         ))}
       </section>
 
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-tinta/10 py-6 text-xs text-tinta/50">
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-cafe/10 py-6 text-xs text-cafe/50">
         <p>
           © {new Date().getFullYear()} {settings.businessName}
         </p>
-        <Link href="/privacidad" className="hover:text-tinta">
+        <Link href="/privacidad" className="hover:text-cafe">
           Aviso de privacidad
         </Link>
       </footer>

@@ -73,11 +73,11 @@ export function RedeemSection({
       {pending.length > 0 ? (
         <ul className="space-y-2">
           {pending.map((reward) => (
-            <li key={reward.id} className="flex items-center gap-3 rounded-2xl bg-ocre/20 px-4 py-3 ring-1 ring-ocre/60">
-              <GiftIcon className="h-6 w-6 shrink-0 text-tinta/70" />
+            <li key={reward.id} className="flex items-center gap-3 rounded-2xl bg-limon/20 px-4 py-3 ring-1 ring-limon/60">
+              <GiftIcon className="h-6 w-6 shrink-0 text-cafe/70" />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold leading-snug">{reward.title}</p>
-                <p className="text-xs text-tinta/60">Ganado con sellos · {reward.earnedAt}</p>
+                <p className="text-xs text-cafe/60">Ganado con sellos · {reward.earnedAt}</p>
               </div>
               <ActionForm action={stampAction}>
                 {hidden}
@@ -93,8 +93,8 @@ export function RedeemSection({
 
       {pointsEnabled && catalog.length > 0 ? (
         <div>
-          <p className="mb-2 text-sm font-semibold text-tinta/85">
-            Canjear con puntos <span className="font-normal text-tinta/55">· saldo {fmt.format(points)} pts</span>
+          <p className="mb-2 text-sm font-semibold text-cafe/85">
+            Canjear con puntos <span className="font-normal text-cafe/55">· saldo {fmt.format(points)} pts</span>
           </p>
           <ul className="space-y-2">
             {catalog.map((item) => {
@@ -104,12 +104,12 @@ export function RedeemSection({
                   key={item.id}
                   className={cx(
                     "flex items-center gap-3 rounded-2xl px-4 py-3 ring-1",
-                    enough ? "bg-salvia/[0.07] ring-salvia/30" : "bg-papel ring-tinta/10"
+                    enough ? "bg-azul/15 ring-azul" : "bg-papel ring-cafe/10"
                   )}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold leading-snug">{item.title}</p>
-                    <p className="text-xs text-tinta/60">
+                    <p className="text-xs text-cafe/60">
                       {fmt.format(item.cost)} pts
                       {enough ? "" : ` · le faltan ${fmt.format(item.cost - points)}`}
                     </p>

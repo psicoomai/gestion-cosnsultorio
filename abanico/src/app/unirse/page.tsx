@@ -30,7 +30,7 @@ export default async function JoinPage() {
       </header>
       <main className="flex-1 py-8">
         <h1 className="text-3xl font-semibold leading-tight">Tu tarjeta de lealtad</h1>
-        <p className="mt-2 leading-relaxed text-tinta/70">
+        <p className="mt-2 leading-relaxed text-cafe/70">
           {programSummary(settings)}
           {welcome}
         </p>

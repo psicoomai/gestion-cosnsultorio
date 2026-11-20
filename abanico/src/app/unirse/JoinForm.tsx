@@ -45,8 +45,8 @@ export function JoinForm() {
       </Field>
 
       <fieldset className="space-y-1.5">
-        <legend className="text-sm font-semibold text-tinta/85">
-          Cumpleaños <span className="font-normal text-tinta/50">(opcional)</span>
+        <legend className="text-sm font-semibold text-cafe/85">
+          Cumpleaños <span className="font-normal text-cafe/50">(opcional)</span>
         </legend>
         <div className="grid grid-cols-[6rem_1fr] gap-3">
           <label className="sr-only" htmlFor="day">
@@ -80,29 +80,29 @@ export function JoinForm() {
           </select>
         </div>
         {e.birthday ? (
-          <p className="text-sm font-medium text-terracota-oscuro">{e.birthday}</p>
+          <p className="text-sm font-medium text-alerta">{e.birthday}</p>
         ) : (
-          <p className="text-sm text-tinta/55">Para consentirte en tu día.</p>
+          <p className="text-sm text-cafe/55">Para consentirte en tu día.</p>
         )}
       </fieldset>
 
       <div className="space-y-1.5">
-        <label className="flex items-start gap-3 text-sm leading-relaxed text-tinta/75">
+        <label className="flex items-start gap-3 text-sm leading-relaxed text-cafe/75">
           <input
             type="checkbox"
             name="consent"
-            className="mt-1 h-5 w-5 shrink-0 accent-terracota"
+            className="mt-1 h-5 w-5 shrink-0 accent-cafe"
             aria-invalid={Boolean(e.consent)}
           />
           <span>
             Acepto el{" "}
-            <Link href="/privacidad" className="font-semibold text-terracota underline underline-offset-2" target="_blank">
+            <Link href="/privacidad" className="font-semibold text-cafe underline underline-offset-2" target="_blank">
               aviso de privacidad
             </Link>{" "}
             y que mis datos se usen para mi tarjeta de sellos.
           </span>
         </label>
-        {e.consent ? <p className="text-sm font-medium text-terracota-oscuro">{e.consent}</p> : null}
+        {e.consent ? <p className="text-sm font-medium text-alerta">{e.consent}</p> : null}
       </div>
 
       <SubmitButton size="lg" className="w-full" pendingText="Creando tu tarjeta…">

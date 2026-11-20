@@ -12,7 +12,7 @@ export function FanIcon({ ribs = true, ...props }: SVGProps<SVGSVGElement> & { r
         fill="currentColor"
       />
       {ribs ? (
-        <g stroke="var(--fan-rib, var(--color-papel))" strokeWidth="0.9" strokeLinecap="round" opacity="0.85">
+        <g stroke="var(--fan-rib, var(--color-crema))" strokeWidth="0.9" strokeLinecap="round" opacity="0.85">
           <path d="M12 19 L4.64 10.83" />
           <path d="M12 19 L9.34 8.33" />
           <path d="M12 19 L14.66 8.33" />

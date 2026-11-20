@@ -2,20 +2,12 @@ import "server-only";
 import type { InStatement, Transaction } from "@libsql/client";
 import { db, num, numOrNull, str } from "@/lib/db";
 import { newCardCode, newCardToken, normalizeCardCode } from "@/lib/codes";
-import {
-  applyStamps,
-  cardLength,
-  cooldownRemainingMinutes,
-  pointsForPurchase,
-  type StampLevel,
-} from "@/lib/stamps";
+import { applyStamps, cooldownRemainingMinutes, pointsForPurchase } from "@/lib/stamps";
 import { APP_TIMEZONE, dayKey, startOfDay } from "@/lib/time";
 
 // ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
-
-export type Level = StampLevel & { id: number };
 
 export type CatalogItem = { id: number; title: string; cost: number; active: boolean };
 
@@ -23,16 +15,16 @@ export type Settings = {
   businessName: string;
   rewardTerms: string;
   stampsEnabled: boolean;
+  /** Sellos para completar la tarjeta y ganar la recompensa. */
+  stampsRequired: number;
+  /** Recompensa al completar la tarjeta de sellos. */
+  rewardTitle: string;
   pointsEnabled: boolean;
   welcomeStamps: number;
   cooldownMinutes: number;
   /** Pesos de compra necesarios para ganar `earnPoints` puntos. */
   earnAmount: number;
   earnPoints: number;
-  /** Niveles de la tarjeta, ordenados por número de sello. */
-  levels: Level[];
-  /** Sellos de una tarjeta completa (el nivel más alto). */
-  cardLength: number;
   /** Catálogo de premios por puntos (solo los activos), del más barato al más caro. */
   catalog: CatalogItem[];
 };
@@ -142,27 +134,22 @@ function rowToActivity(row: Record<string, unknown>): Activity {
 
 export async function getSettings(): Promise<Settings> {
   const client = await db();
-  const [settingsResult, levelsResult, catalogResult] = await client.batch(
-    [
-      "SELECT * FROM settings WHERE id = 1",
-      "SELECT * FROM stamp_levels ORDER BY at",
-      "SELECT * FROM point_rewards WHERE active = 1 ORDER BY cost, id",
-    ],
+  const [settingsResult, catalogResult] = await client.batch(
+    ["SELECT * FROM settings WHERE id = 1", "SELECT * FROM point_rewards WHERE active = 1 ORDER BY cost, id"],
     "read"
   );
   const row = settingsResult.rows[0];
-  const levels: Level[] = levelsResult.rows.map((r) => ({ id: num(r.id), at: num(r.at), title: str(r.title) }));
   return {
     businessName: str(row?.business_name) || "Abanico",
     rewardTerms: str(row?.reward_terms),
-    stampsEnabled: num(row?.stamps_enabled) === 1 && levels.length > 0,
+    stampsEnabled: num(row?.stamps_enabled) === 1,
+    stampsRequired: num(row?.stamps_required) || 10,
+    rewardTitle: str(row?.reward_title) || "Un producto de cortesía",
     pointsEnabled: num(row?.points_enabled) === 1,
     welcomeStamps: num(row?.welcome_stamps),
     cooldownMinutes: num(row?.cooldown_minutes),
     earnAmount: num(row?.earn_amount) || 10,
     earnPoints: num(row?.earn_points) || 1,
-    levels,
-    cardLength: cardLength(levels),
     catalog: catalogResult.rows.map((r) => ({
       id: num(r.id),
       title: str(r.title),
@@ -176,40 +163,36 @@ export type ProgramInput = {
   businessName: string;
   rewardTerms: string;
   stampsEnabled: boolean;
+  stampsRequired: number;
+  rewardTitle: string;
   pointsEnabled: boolean;
   welcomeStamps: number;
   cooldownMinutes: number;
   earnAmount: number;
   earnPoints: number;
-  levels: StampLevel[];
 };
 
 export async function saveProgram(input: ProgramInput): Promise<void> {
   const client = await db();
-  const statements: InStatement[] = [
-    {
-      sql: `UPDATE settings SET business_name = ?, reward_terms = ?, stamps_enabled = ?, points_enabled = ?,
-              welcome_stamps = ?, cooldown_minutes = ?, earn_amount = ?, earn_points = ?, updated_at = ?
-            WHERE id = 1`,
-      args: [
-        input.businessName,
-        input.rewardTerms,
-        input.stampsEnabled ? 1 : 0,
-        input.pointsEnabled ? 1 : 0,
-        input.welcomeStamps,
-        input.cooldownMinutes,
-        input.earnAmount,
-        input.earnPoints,
-        Date.now(),
-      ],
-    },
-    "DELETE FROM stamp_levels",
-    ...input.levels.map((level) => ({
-      sql: "INSERT INTO stamp_levels (at, title) VALUES (?, ?)",
-      args: [level.at, level.title],
-    })),
-  ];
-  await client.batch(statements, "write");
+  await client.execute({
+    sql: `UPDATE settings SET business_name = ?, reward_terms = ?, stamps_enabled = ?, stamps_required = ?,
+            reward_title = ?, points_enabled = ?, welcome_stamps = ?, cooldown_minutes = ?, earn_amount = ?,
+            earn_points = ?, updated_at = ?
+          WHERE id = 1`,
+    args: [
+      input.businessName,
+      input.rewardTerms,
+      input.stampsEnabled ? 1 : 0,
+      input.stampsRequired,
+      input.rewardTitle,
+      input.pointsEnabled ? 1 : 0,
+      input.welcomeStamps,
+      input.cooldownMinutes,
+      input.earnAmount,
+      input.earnPoints,
+      Date.now(),
+    ],
+  });
 }
 
 export async function setBusinessName(name: string): Promise<void> {
@@ -420,27 +403,27 @@ async function addStampsInTx(
   amount: number,
   settings: Settings,
   now: number
-): Promise<{ stamps: number; earned: string[] }> {
+): Promise<{ stamps: number; rewardsEarned: number }> {
   const current = await tx.execute({ sql: "SELECT stamps FROM customers WHERE id = ?", args: [customerId] });
-  const result = applyStamps(num(current.rows[0]?.stamps), amount, settings.levels);
+  const result = applyStamps(num(current.rows[0]?.stamps), amount, settings.stampsRequired);
   await tx.execute({
     sql: `UPDATE customers SET stamps = ?, total_stamps = total_stamps + ?, last_stamp_at = ?, last_visit_at = ?
           WHERE id = ?`,
     args: [result.stamps, amount, now, now, customerId],
   });
   await logActivity(tx, { customerId, staffId, type: "stamp", amount, now });
-  for (const title of result.earned) {
+  for (let i = 0; i < result.rewardsEarned; i++) {
     await tx.execute({
       sql: "INSERT INTO rewards (customer_id, source, title, earned_at) VALUES (?, 'stamps', ?, ?)",
-      args: [customerId, title, now],
+      args: [customerId, settings.rewardTitle, now],
     });
-    await logActivity(tx, { customerId, staffId, type: "reward_earned", amount: 1, detail: title, now });
+    await logActivity(tx, { customerId, staffId, type: "reward_earned", amount: 1, detail: settings.rewardTitle, now });
   }
-  return { stamps: result.stamps, earned: result.earned };
+  return result;
 }
 
 export type VisitOutcome =
-  | { ok: true; stamps: number | null; earned: string[]; pointsAdded: number; points: number }
+  | { ok: true; stamps: number | null; rewardsEarned: number; pointsAdded: number; points: number }
   | { ok: false; reason: "not_found" | "nothing" }
   | { ok: false; reason: "cooldown"; minutes: number };
 
@@ -481,7 +464,7 @@ export async function recordVisit(input: {
       }
     }
 
-    let stampResult: { stamps: number; earned: string[] } | null = null;
+    let stampResult: { stamps: number; rewardsEarned: number } | null = null;
     if (stamps > 0) stampResult = await addStampsInTx(tx, customer.id, input.staffId, stamps, settings, now);
 
     if (points > 0) {
@@ -503,7 +486,7 @@ export async function recordVisit(input: {
     return {
       ok: true,
       stamps: stampResult ? stampResult.stamps : null,
-      earned: stampResult?.earned ?? [],
+      rewardsEarned: stampResult?.rewardsEarned ?? 0,
       pointsAdded: points,
       points: customer.points + points,
     };
@@ -710,13 +693,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const dayShift = ((today % 86_400_000) + 86_400_000) % 86_400_000;
   const localDay = `((created_at - ${dayShift}) / 86400000)`;
 
-  // Clientes a 2 sellos o menos de un nivel de la tarjeta.
-  const positions = settings.stampsEnabled ? settings.levels.map((l) => l.at) : [];
-  const closeStatement: InStatement = positions.length
+  // Clientes a 1 o 2 sellos de completar la tarjeta.
+  const closeStatement: InStatement = settings.stampsEnabled
     ? {
-        sql: `SELECT * FROM customers WHERE ${positions.map(() => "(stamps BETWEEN ? AND ?)").join(" OR ")}
-              ORDER BY last_visit_at DESC LIMIT 6`,
-        args: positions.flatMap((at) => [Math.max(1, at - 2), at - 1]),
+        sql: "SELECT * FROM customers WHERE stamps >= ? ORDER BY stamps DESC, last_visit_at DESC LIMIT 6",
+        args: [Math.max(1, settings.stampsRequired - 2)],
       }
     : "SELECT * FROM customers WHERE 0";
 

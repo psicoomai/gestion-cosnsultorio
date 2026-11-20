@@ -44,12 +44,12 @@ export function VisitForm({
       <input type="hidden" name="customerId" value={customerId} />
       {stampsEnabled ? (
         <div>
-          <p className="text-sm font-semibold text-tinta/85">Sellos</p>
+          <p className="text-sm font-semibold text-cafe/85">Sellos</p>
           <input type="hidden" name="stamps" value={stamps} />
           <div className="mt-1.5 flex items-center gap-3">
             <button
               type="button"
-              className="h-14 w-14 rounded-2xl bg-papel text-2xl font-semibold ring-1 ring-tinta/15 hover:bg-arena/60 disabled:opacity-40"
+              className="h-14 w-14 rounded-2xl bg-papel text-2xl font-semibold ring-1 ring-cafe/15 hover:bg-limon-suave/60 disabled:opacity-40"
               onClick={() => setStamps((n) => Math.max(0, n - 1))}
               disabled={stamps <= 0}
               aria-label="Un sello menos"
@@ -61,7 +61,7 @@ export function VisitForm({
             </output>
             <button
               type="button"
-              className="h-14 w-14 rounded-2xl bg-papel text-2xl font-semibold ring-1 ring-tinta/15 hover:bg-arena/60 disabled:opacity-40"
+              className="h-14 w-14 rounded-2xl bg-papel text-2xl font-semibold ring-1 ring-cafe/15 hover:bg-limon-suave/60 disabled:opacity-40"
               onClick={() => setStamps((n) => Math.min(MAX_STAMPS_PER_VISIT, n + 1))}
               disabled={stamps >= MAX_STAMPS_PER_VISIT}
               aria-label="Un sello más"
@@ -86,7 +86,7 @@ export function VisitForm({
           }
         >
           <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-tinta/50">$</span>
+            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-cafe/50">$</span>
             <Input
               id={`purchase-${customerId}`}
               name="purchase"

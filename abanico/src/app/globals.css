@@ -1,20 +1,24 @@
 @import "tailwindcss";
 
 /*
- * Identidad visual de Abanico. Toda la paleta vive aquí: para adaptar la app
- * a los colores oficiales de la marca basta con cambiar estos valores.
+ * Identidad visual de Abanico. Toda la paleta vive aquí: para cambiar los
+ * colores de la app basta con editar estos valores.
+ *
+ * Contraste: el limón y el azul se usan como FONDO con texto café encima
+ * (nunca como color de texto sobre crema o blanco, porque no se leería).
  */
 @theme {
   --color-*: initial;
   --color-white: #ffffff;
-  --color-crema: #f6efe4;
-  --color-papel: #fffbf5;
-  --color-arena: #ecdfcc;
-  --color-tinta: #2a211c;
-  --color-terracota: #bf4e2b;
-  --color-terracota-oscuro: #9b3b1d;
-  --color-salvia: #2f5d50;
-  --color-ocre: #e2a23b;
+  /* Paleta oficial de Abanico */
+  --color-crema: #faf8ee; /* fondo */
+  --color-limon-suave: #f4f7be; /* fondos suaves, avisos */
+  --color-limon: #e5f77d; /* acento: sellos, premios */
+  --color-azul: #809bce; /* secundario: puntos, gráficas */
+  --color-cafe: #3c2415; /* texto, botones, contraste */
+  /* Apoyo (no son de la paleta): superficies blancas y mensajes de error */
+  --color-papel: #ffffff;
+  --color-alerta: #a8321e;
 
   --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
   --font-sans: "Plus Jakarta Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -54,10 +58,10 @@
   @keyframes glow {
     0%,
     100% {
-      box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-ocre) 45%, transparent);
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-azul) 55%, transparent);
     }
     50% {
-      box-shadow: 0 0 0 10px color-mix(in oklab, var(--color-ocre) 0%, transparent);
+      box-shadow: 0 0 0 10px color-mix(in oklab, var(--color-azul) 0%, transparent);
     }
   }
 }
@@ -68,23 +72,23 @@
   }
 
   body {
-    @apply bg-crema font-sans text-tinta antialiased;
+    @apply bg-crema font-sans text-cafe antialiased;
   }
 
   h1,
   h2,
   h3 {
-    @apply font-display text-tinta;
+    @apply font-display text-cafe;
     font-optical-sizing: auto;
     letter-spacing: -0.015em;
   }
 
   ::selection {
-    @apply bg-terracota/20;
+    @apply bg-limon text-cafe;
   }
 
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-terracota;
+    @apply outline-2 outline-offset-2 outline-cafe;
   }
 
   input,
