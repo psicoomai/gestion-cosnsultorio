@@ -2,28 +2,55 @@
 // y los pagos reales. Ningún total se guarda como campo suelto en el
 // paciente — ver punto 10 de las indicaciones del producto.
 
+import { todayIso } from "@/lib/format";
 import type { Currency, Patient, Payment, Session, SessionStatus } from "@/lib/types";
 
-/** Reparte cada pago entre las sesiones a las que se aplicó, en orden, sin rebasar el costo de cada una. */
-export function sessionPaidMap(sessions: Session[], payments: Payment[]): Map<string, number> {
-  const paid = new Map<string, number>();
+export interface Allocation {
+  /** Cuánto se ha pagado de cada sesión (nunca más que su costo). */
+  sessionPaid: Map<string, number>;
+  /** Cuánto de cada pago quedó efectivamente aplicado a sesiones. */
+  paymentApplied: Map<string, number>;
+}
+
+/** Orden estable para aplicar pagos: por fecha de pago y luego por fecha de registro. */
+function byPaymentOrder(a: Payment, b: Payment): number {
+  return a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id);
+}
+
+/**
+ * Reparte cada pago entre las sesiones a las que se aplicó, en orden, sin
+ * rebasar el costo de cada una. Lo que un pago no alcanza a aplicar (porque
+ * sus sesiones ya estaban cubiertas o se borraron) queda como "sin aplicar":
+ * ese dinero NO cuenta como cobrado, y la Revisión lo señala.
+ */
+export function allocatePayments(sessions: Session[], payments: Payment[]): Allocation {
+  const sessionPaid = new Map<string, number>();
+  const paymentApplied = new Map<string, number>();
   const amountById = new Map(sessions.map((s) => [s.id, s.amount]));
 
-  for (const payment of payments) {
+  for (const payment of [...payments].sort(byPaymentOrder)) {
     let remaining = payment.amount;
+    let applied = 0;
     for (const sessionId of payment.sessionIds) {
       if (remaining <= 0) break;
       const sessionAmount = amountById.get(sessionId);
       if (sessionAmount === undefined) continue;
-      const already = paid.get(sessionId) ?? 0;
+      const already = sessionPaid.get(sessionId) ?? 0;
       const owed = sessionAmount - already;
       if (owed <= 0) continue;
-      const applied = Math.min(owed, remaining);
-      paid.set(sessionId, already + applied);
-      remaining -= applied;
+      const amount = Math.min(owed, remaining);
+      sessionPaid.set(sessionId, already + amount);
+      remaining -= amount;
+      applied += amount;
     }
+    paymentApplied.set(payment.id, applied);
   }
-  return paid;
+  return { sessionPaid, paymentApplied };
+}
+
+/** Reparte cada pago entre las sesiones a las que se aplicó, en orden, sin rebasar el costo de cada una. */
+export function sessionPaidMap(sessions: Session[], payments: Payment[]): Map<string, number> {
+  return allocatePayments(sessions, payments).sessionPaid;
 }
 
 export function sessionStatus(session: Session, paidAmount: number): SessionStatus {
@@ -106,7 +133,7 @@ export function hasUnpaidSessions(patientId: string, sessions: Session[], paymen
 }
 
 export function currentMonthKey(): string {
-  return monthKey(new Date().toISOString());
+  return monthKey(todayIso());
 }
 
 export function allPatientsTotals(
@@ -183,4 +210,100 @@ export function monthlyTotals(
     const cobrado = scoped.reduce((sum, s) => sum + Math.min(paidMap.get(s.id) ?? 0, s.amount), 0);
     return { month: key, label: monthLabel(key).split(" ")[0], generado, cobrado };
   });
+}
+
+/** Suma con redondeo a centavos, para que 0.1 + 0.2 no deje residuos al comparar totales. */
+export function roundCents(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+export interface MonthCell {
+  generated: number;
+  paid: number;
+  pending: number;
+}
+
+export interface YearPatientRow {
+  patient: Patient;
+  months: MonthCell[]; // 12 posiciones, enero = 0
+  total: MonthCell;
+}
+
+export interface YearSummary {
+  year: number;
+  rows: YearPatientRow[];
+  /** Totales por mes, sumando las sesiones de ese mes (no las filas de pacientes). */
+  months: MonthCell[];
+  /** Total del año, sumando todas las sesiones del año directamente. */
+  total: MonthCell;
+  /**
+   * Comprobación de cuadre: los tres caminos para llegar al total cobrado
+   * (por paciente, por mes y directo) deben dar exactamente lo mismo.
+   */
+  reconciliation: { byPatients: number; byMonths: number; direct: number; ok: boolean };
+}
+
+const emptyCell = (): MonthCell => ({ generated: 0, paid: 0, pending: 0 });
+
+function addToCell(cell: MonthCell, generated: number, paid: number) {
+  cell.generated += generated;
+  cell.paid += paid;
+  cell.pending += generated - paid;
+}
+
+/**
+ * Corte anual equivalente a la hoja TOTALES de un Excel de consultorio:
+ * honorarios (REAL), cobrado y por cobrar, por mes y por paciente. Cada
+ * sesión pertenece al mes de su fecha — imposible contarla en dos meses o
+ * olvidar a un paciente en la suma.
+ */
+export function yearSummary(
+  patients: Patient[],
+  sessions: Session[],
+  payments: Payment[],
+  year: number
+): YearSummary {
+  const { sessionPaid } = allocatePayments(sessions, payments);
+  const prefix = `${year}-`;
+  const yearSessions = sessions.filter((s) => s.date.startsWith(prefix));
+
+  const rowsById = new Map<string, YearPatientRow>(
+    patients.map((patient) => [
+      patient.id,
+      { patient, months: Array.from({ length: 12 }, emptyCell), total: emptyCell() },
+    ])
+  );
+  const months = Array.from({ length: 12 }, emptyCell);
+  const total = emptyCell();
+
+  for (const session of yearSessions) {
+    const row = rowsById.get(session.patientId);
+    if (!row) continue;
+    const monthIndex = Number(session.date.slice(5, 7)) - 1;
+    const paid = Math.min(sessionPaid.get(session.id) ?? 0, session.amount);
+    addToCell(row.months[monthIndex], session.amount, paid);
+    addToCell(row.total, session.amount, paid);
+    addToCell(months[monthIndex], session.amount, paid);
+    addToCell(total, session.amount, paid);
+  }
+
+  const rows = [...rowsById.values()];
+  const byPatients = roundCents(rows.reduce((sum, r) => sum + r.total.paid, 0));
+  const byMonths = roundCents(months.reduce((sum, m) => sum + m.paid, 0));
+  const direct = roundCents(total.paid);
+
+  return {
+    year,
+    rows,
+    months,
+    total,
+    reconciliation: { byPatients, byMonths, direct, ok: byPatients === byMonths && byMonths === direct },
+  };
+}
+
+/** Años con al menos una sesión, más el año en curso (más reciente primero). */
+export function availableYears(sessions: Session[]): number[] {
+  const years = new Set(sessions.map((s) => Number(s.date.slice(0, 4))));
+  years.add(new Date().getFullYear());
+  return [...years].filter(Number.isFinite).sort((a, b) => b - a);
 }

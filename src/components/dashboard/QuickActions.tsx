@@ -29,7 +29,7 @@ export function QuickActions() {
           ↑ Subir comprobante
         </RegisterPaymentButton>
         <NewSessionButton variant="secondary" className={actionClassName}>
-          Nueva sesión
+          Registrar sesiones
         </NewSessionButton>
       </CardContent>
     </Card>

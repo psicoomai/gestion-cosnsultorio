@@ -7,16 +7,17 @@ import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
+import { PatientOptions } from "@/components/patients/PatientOptions";
 import { DuplicateWarning } from "@/components/payments/DuplicateWarning";
 import { ReceiptTab } from "@/components/payments/ReceiptTab";
 import { SessionPicker } from "@/components/payments/SessionPicker";
 import { cn } from "@/lib/cn";
+import { todayIso } from "@/lib/format";
 import { hasUnpaidSessions } from "@/lib/metrics";
 import type { PaymentMethod } from "@/lib/types";
 
 const methods: PaymentMethod[] = ["Transferencia", "Efectivo", "Tarjeta", "Otro"];
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export function PaymentModal({
   open,
@@ -127,11 +128,7 @@ export function PaymentModal({
               disabled={Boolean(patientId)}
             >
               <option value="">Selecciona un paciente…</option>
-              {patients.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
+              <PatientOptions patients={patients} />
             </Select>
           </FormField>
 

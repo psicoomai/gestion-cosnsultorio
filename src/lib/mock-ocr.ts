@@ -7,6 +7,8 @@
 // El resultado SIEMPRE se presenta como una vista previa editable — nunca
 // se registra un pago automáticamente a partir de esta extracción.
 
+import { todayIso } from "@/lib/format";
+
 export interface ExtractedReceipt {
   amount: number;
   date: string; // ISO yyyy-mm-dd
@@ -22,7 +24,7 @@ export function simulateReceiptExtraction(): Promise<ExtractedReceipt> {
     setTimeout(() => {
       resolve({
         amount: MOCK_AMOUNTS[Math.floor(Math.random() * MOCK_AMOUNTS.length)],
-        date: new Date().toISOString().slice(0, 10),
+        date: todayIso(),
         reference: `REF-${Math.floor(1000 + Math.random() * 9000)}`,
         bank: MOCK_BANKS[Math.floor(Math.random() * MOCK_BANKS.length)],
       });

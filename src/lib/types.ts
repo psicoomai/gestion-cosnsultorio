@@ -39,8 +39,24 @@ export type PatientStatus = "activo" | "en-pausa" | "inactivo";
 export const patientStatusLabels: Record<PatientStatus, string> = {
   activo: "Activo",
   "en-pausa": "En pausa",
-  inactivo: "Inactivo",
+  inactivo: "Ya no viene",
 };
+
+/** Un periodo de tratamiento ya terminado (dejó de venir y, quizá, regresó después). */
+export interface TreatmentPeriod {
+  start: string; // ISO
+  end: string; // ISO
+}
+
+/** Día y hora fijos de la semana en que el paciente suele tener sesión. */
+export interface WeeklySlot {
+  /** 0 = domingo … 6 = sábado (como `Date.getDay()`). */
+  weekday: number;
+  /** "HH:mm" */
+  time: string;
+}
+
+export const weekdayLabels = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export type Currency = "MXN" | "USD";
 
@@ -58,6 +74,19 @@ export interface Patient {
   costPerSession: number;
   currency: Currency;
   adminNotes?: string;
+  /**
+   * Fecha en que dejó de venir a terapia. Desde el mes siguiente ya no
+   * aparece en los cortes mensuales (sus adeudos viejos sí siguen contando).
+   */
+  endDate?: string; // ISO
+  /** Tratamientos anteriores, si dejó de venir y luego regresó. */
+  pastPeriods?: TreatmentPeriod[];
+  /** Horario habitual (solo informativo: nunca crea sesiones por sí solo). */
+  schedule?: WeeklySlot[];
+  /** Duración habitual de la sesión, en minutos. */
+  sessionMinutes?: number;
+  /** Enlace fijo de videollamada (Zoom, Meet…), si las sesiones son en línea. */
+  meetingUrl?: string;
 }
 
 export interface Session {
@@ -66,6 +95,8 @@ export interface Session {
   date: string; // ISO
   /** Costo histórico de ESTA sesión. No cambia si después cambia la tarifa del paciente. */
   amount: number;
+  /** Nota libre (p. ej. "No asistió", "Doctoralia"). */
+  note?: string;
 }
 
 export type SessionStatus = "pagada" | "parcial" | "pendiente";
@@ -84,7 +115,7 @@ export interface Payment {
   concept?: string;
   /** Sesiones a las que se aplica este pago, en el orden en que se abonan. */
   sessionIds: string[];
-  source: "manual" | "comprobante";
+  source: "manual" | "comprobante" | "importado";
   /**
    * Imagen del comprobante adjunta a este pago (data URL, solo en memoria del
    * navegador — no hay almacenamiento persistente todavía). Se puede
@@ -93,4 +124,10 @@ export interface Payment {
    */
   receiptImageUrl?: string;
   createdAt: string; // ISO
+}
+
+/** Datos de quien usa la plataforma. Se muestran en la barra lateral. */
+export interface Profile {
+  name: string;
+  specialty?: string;
 }

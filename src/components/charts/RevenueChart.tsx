@@ -34,9 +34,9 @@ export function RevenueChart({ data }: { data: ReturnType<typeof monthlyTotals> 
         <YAxis
           axisLine={false}
           tickLine={false}
-          width={64}
+          width={56}
           tick={{ fill: themeColors.dark, fillOpacity: 0.55, fontSize: 12 }}
-          tickFormatter={(value: number) => formatCurrency(value)}
+          tickFormatter={(value: number) => (value >= 1000 ? `$${Math.round(value / 1000)}k` : `$${value}`)}
         />
         <Tooltip
           cursor={{ fill: themeColors.dark, fillOpacity: 0.04 }}

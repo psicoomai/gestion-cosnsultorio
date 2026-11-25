@@ -11,8 +11,10 @@ import { RevenueChart } from "@/components/charts/RevenueChart";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { AccountsReceivable } from "@/components/dashboard/AccountsReceivable";
 import { AiQuery } from "@/components/dashboard/AiQuery";
+import { ReviewSummary } from "@/components/dashboard/ReviewSummary";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
 import { cn } from "@/lib/cn";
+import { appearsInMonth } from "@/lib/treatment";
 import { formatCurrency } from "@/lib/format";
 import {
   allPatientsTotalsByCurrency,
@@ -29,7 +31,9 @@ export default function DashboardPage() {
 
   const totalsByCurrency = allPatientsTotalsByCurrency(patients, sessions, payments, month);
 
+  // Quien ya dejó de venir no aparece en el mes, salvo que tenga sesiones en él.
   const patientRows = patients
+    .filter((patient) => appearsInMonth(patient, month, sessions))
     .map((patient) => ({ patient, month: patientTotals(patient.id, sessions, payments, month) }))
     .sort((a, b) => b.month.pending - a.month.pending);
 
@@ -128,11 +132,12 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Panel lateral derecho — siempre estos tres bloques, en este orden. */}
+        {/* Panel lateral derecho — los tres bloques fijos, en este orden, más la revisión. */}
         <div className="col-span-3 flex flex-col gap-6">
           <QuickActions />
           <AccountsReceivable />
           <AiQuery />
+          <ReviewSummary />
         </div>
       </div>
     </AppShell>

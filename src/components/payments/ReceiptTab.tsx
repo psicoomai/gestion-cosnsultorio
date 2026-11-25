@@ -6,6 +6,7 @@ import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
+import { PatientOptions } from "@/components/patients/PatientOptions";
 import { DuplicateWarning } from "@/components/payments/DuplicateWarning";
 import { SessionPicker } from "@/components/payments/SessionPicker";
 import { hasUnpaidSessions } from "@/lib/metrics";
@@ -239,11 +240,7 @@ export function ReceiptTab({
           <div className="mt-2">
             <Select value={selectedPatientId} onChange={(e) => setSelectedPatientId(e.target.value)}>
               <option value="">…o selecciona manualmente</option>
-              {patients.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
+              <PatientOptions patients={patients} />
             </Select>
           </div>
         </FormField>

@@ -1,15 +1,35 @@
 "use client";
 
-// Estado del "backend" en memoria. Todavía no hay servidor ni base de datos:
-// los datos parten de la semilla en mock-data.ts y viven en el navegador
-// mientras dura la sesión (se pierden al recargar). Cuando exista un backend
-// real, addPatient/addSession/registerPayment/attachReceiptToPayment son los
-// puntos donde se conecta.
+// Estado de la app. Los datos se cargan del almacenamiento al abrir la app y
+// se guardan solos después de cada cambio (ver src/lib/storage.ts). Hoy el
+// almacenamiento es el propio navegador; cuando exista un backend con
+// cuentas, solo cambia `createBrowserStore()` por la implementación remota.
+//
+// Todas las operaciones que borran algo limpian también sus referencias
+// (borrar un paciente borra sus sesiones y pagos; borrar una sesión la quita
+// de los pagos que la cubrían) para que nunca queden datos huérfanos que
+// descuadren los totales.
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { generateId } from "@/lib/id";
 import { initialPatients, initialPayments, initialSessions } from "@/lib/mock-data";
-import type { Patient, Payment, Session } from "@/lib/types";
+import {
+  SNAPSHOT_VERSION,
+  createBrowserStore,
+  type ClinicData,
+  type ClinicSnapshot,
+  type ClinicStore,
+} from "@/lib/storage";
+import type { Patient, Payment, Profile, Session } from "@/lib/types";
 
 export type NewPatientInput = Omit<Patient, "id">;
 
@@ -17,14 +37,31 @@ export type NewSessionInput = Omit<Session, "id">;
 
 export type NewPaymentInput = Omit<Payment, "id" | "createdAt">;
 
+type SaveState = "idle" | "saving" | "saved" | "error";
+
 interface ClinicDataContextValue {
+  /** `false` mientras se leen los datos guardados; las pantallas muestran un estado de carga. */
+  hydrated: boolean;
+  saveState: SaveState;
+  profile: Profile | null;
   patients: Patient[];
   sessions: Session[];
   payments: Payment[];
+  setProfile: (profile: Profile) => void;
   addPatient: (input: NewPatientInput) => Patient;
+  updatePatient: (id: string, patch: Partial<NewPatientInput>) => void;
+  /** Borra al paciente junto con todas sus sesiones y pagos. */
+  deletePatient: (id: string) => void;
   /** Crea UNA sesión puntual. Nunca se dispara automáticamente por la frecuencia. */
   addSession: (input: NewSessionInput) => Session;
+  /** Crea varias sesiones a la vez (p. ej. todas las del mes). */
+  addSessions: (inputs: NewSessionInput[]) => Session[];
+  updateSession: (id: string, patch: Partial<Omit<Session, "id" | "patientId">>) => void;
+  /** Borra la sesión y la quita de los pagos que la cubrían. */
+  deleteSession: (id: string) => void;
   registerPayment: (input: NewPaymentInput) => Payment;
+  updatePayment: (id: string, patch: Partial<Omit<Payment, "id" | "patientId" | "createdAt">>) => void;
+  deletePayment: (id: string) => void;
   /** Adjunta una imagen de comprobante a un pago YA existente — nunca crea un pago nuevo. */
   attachReceiptToPayment: (paymentId: string, receiptImageUrl: string) => void;
   findPossibleDuplicates: (candidate: {
@@ -33,29 +70,134 @@ interface ClinicDataContextValue {
     date: string;
     reference?: string;
   }) => Payment[];
+  /** Sustituye todos los datos (importación, restaurar respaldo, datos de ejemplo). */
+  replaceData: (data: ClinicData) => void;
+  loadExampleData: () => void;
+  /** Borra todo, incluido el perfil. */
+  resetAll: () => Promise<void>;
+  exportSnapshot: () => ClinicSnapshot;
 }
 
 const ClinicDataContext = createContext<ClinicDataContextValue | null>(null);
 
-export function ClinicDataProvider({ children }: { children: ReactNode }) {
-  const [patients, setPatients] = useState<Patient[]>(initialPatients);
-  const [sessions, setSessions] = useState<Session[]>(initialSessions);
-  const [payments, setPayments] = useState<Payment[]>(initialPayments);
+const SAVE_DELAY_MS = 250;
+
+export function ClinicDataProvider({
+  children,
+  store: providedStore,
+}: {
+  children: ReactNode;
+  store?: ClinicStore;
+}) {
+  const storeRef = useRef<ClinicStore | null>(providedStore ?? null);
+  const [hydrated, setHydrated] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [profile, setProfileState] = useState<Profile | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  // Solo se guarda si la carga inicial terminó bien: si falló, guardar el
+  // estado vacío borraría lo que la persona tenía guardado.
+  const canSave = useRef(false);
+  // La primera pasada tras cargar solo refleja lo que ya estaba guardado: no se vuelve a guardar.
+  const justLoaded = useRef(true);
+
+  useEffect(() => {
+    const store = (storeRef.current ??= createBrowserStore());
+    let cancelled = false;
+    store
+      .load()
+      .then((snapshot) => {
+        if (cancelled) return;
+        canSave.current = true;
+        if (!snapshot) return;
+        setProfileState(snapshot.profile);
+        setPatients(snapshot.patients);
+        setSessions(snapshot.sessions);
+        setPayments(snapshot.payments);
+      })
+      .catch(() => setSaveState("error"))
+      .finally(() => {
+        if (!cancelled) setHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || !canSave.current) return;
+    if (justLoaded.current) {
+      justLoaded.current = false;
+      return;
+    }
+    setSaveState("saving");
+    const timer = setTimeout(() => {
+      storeRef.current
+        ?.save({
+          version: SNAPSHOT_VERSION,
+          profile,
+          patients,
+          sessions,
+          payments,
+          updatedAt: new Date().toISOString(),
+        })
+        .then(() => setSaveState("saved"))
+        .catch(() => setSaveState("error"));
+    }, SAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [hydrated, profile, patients, sessions, payments]);
+
+  const replaceData = useCallback((data: ClinicData) => {
+    setPatients(data.patients);
+    setSessions(data.sessions);
+    setPayments(data.payments);
+  }, []);
 
   const value = useMemo<ClinicDataContextValue>(
     () => ({
+      hydrated,
+      saveState,
+      profile,
       patients,
       sessions,
       payments,
+      setProfile(next) {
+        setProfileState(next);
+      },
       addPatient(input) {
         const patient: Patient = { id: generateId("p"), ...input };
         setPatients((prev) => [...prev, patient]);
         return patient;
       },
+      updatePatient(id, patch) {
+        setPatients((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+      },
+      deletePatient(id) {
+        setPatients((prev) => prev.filter((p) => p.id !== id));
+        setSessions((prev) => prev.filter((s) => s.patientId !== id));
+        setPayments((prev) => prev.filter((p) => p.patientId !== id));
+      },
       addSession(input) {
         const session: Session = { id: generateId("s"), ...input };
         setSessions((prev) => [...prev, session]);
         return session;
+      },
+      addSessions(inputs) {
+        const created = inputs.map((input) => ({ id: generateId("s"), ...input }));
+        setSessions((prev) => [...prev, ...created]);
+        return created;
+      },
+      updateSession(id, patch) {
+        setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+      },
+      deleteSession(id) {
+        setSessions((prev) => prev.filter((s) => s.id !== id));
+        setPayments((prev) =>
+          prev.map((p) =>
+            p.sessionIds.includes(id) ? { ...p, sessionIds: p.sessionIds.filter((sid) => sid !== id) } : p
+          )
+        );
       },
       registerPayment(input) {
         const payment: Payment = {
@@ -65,6 +207,12 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
         };
         setPayments((prev) => [...prev, payment]);
         return payment;
+      },
+      updatePayment(id, patch) {
+        setPayments((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+      },
+      deletePayment(id) {
+        setPayments((prev) => prev.filter((p) => p.id !== id));
       },
       attachReceiptToPayment(paymentId, receiptImageUrl) {
         setPayments((prev) =>
@@ -81,8 +229,27 @@ export function ClinicDataProvider({ children }: { children: ReactNode }) {
           return (sameDate && sameAmount) || sameReference;
         });
       },
+      replaceData,
+      loadExampleData() {
+        replaceData({ patients: initialPatients, sessions: initialSessions, payments: initialPayments });
+      },
+      async resetAll() {
+        await storeRef.current?.clear();
+        setProfileState(null);
+        replaceData({ patients: [], sessions: [], payments: [] });
+      },
+      exportSnapshot() {
+        return {
+          version: SNAPSHOT_VERSION,
+          profile,
+          patients,
+          sessions,
+          payments,
+          updatedAt: new Date().toISOString(),
+        };
+      },
     }),
-    [patients, sessions, payments]
+    [hydrated, saveState, profile, patients, sessions, payments, replaceData]
   );
 
   return <ClinicDataContext.Provider value={value}>{children}</ClinicDataContext.Provider>;

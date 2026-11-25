@@ -6,6 +6,7 @@ import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
+import { todayIso } from "@/lib/format";
 import type { NewPatientInput } from "@/components/providers/ClinicDataProvider";
 import {
   paymentModalityLabels,
@@ -15,28 +16,41 @@ import {
   type PatientStatus,
   type PaymentModality,
   type SessionFrequency,
+  type WeeklySlot,
+  weekdayLabels,
 } from "@/lib/types";
 
-const today = () => new Date().toISOString().slice(0, 10);
 
 export function PatientForm({
   onSubmit,
   onCancel,
+  initial,
+  submitLabel = "Guardar paciente",
 }: {
   onSubmit: (input: NewPatientInput) => void;
   onCancel: () => void;
+  /** Valores actuales, para editar un paciente existente. */
+  initial?: NewPatientInput;
+  submitLabel?: string;
 }) {
   const formId = useId();
-  const [name, setName] = useState("");
-  const [startDate, setStartDate] = useState(today());
-  const [status, setStatus] = useState<PatientStatus>("activo");
-  const [sessionFrequency, setSessionFrequency] = useState<SessionFrequency>("semanal-1");
-  const [paymentModality, setPaymentModality] = useState<PaymentModality>("mensual");
-  const [costPerSession, setCostPerSession] = useState("");
-  const [currency, setCurrency] = useState<Currency>("MXN");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [adminNotes, setAdminNotes] = useState("");
+  const [name, setName] = useState(initial?.name ?? "");
+  const [startDate, setStartDate] = useState(initial?.startDate ?? todayIso());
+  const [status, setStatus] = useState<PatientStatus>(initial?.status ?? "activo");
+  const [sessionFrequency, setSessionFrequency] = useState<SessionFrequency>(
+    initial?.sessionFrequency ?? "semanal-1"
+  );
+  const [paymentModality, setPaymentModality] = useState<PaymentModality>(initial?.paymentModality ?? "mensual");
+  const [costPerSession, setCostPerSession] = useState(
+    initial && initial.costPerSession > 0 ? String(initial.costPerSession) : ""
+  );
+  const [currency, setCurrency] = useState<Currency>(initial?.currency ?? "MXN");
+  const [email, setEmail] = useState(initial?.email ?? "");
+  const [phone, setPhone] = useState(initial?.phone ?? "");
+  const [adminNotes, setAdminNotes] = useState(initial?.adminNotes ?? "");
+  const [schedule, setSchedule] = useState<WeeklySlot[]>(initial?.schedule ?? []);
+  const [sessionMinutes, setSessionMinutes] = useState(String(initial?.sessionMinutes ?? 50));
+  const [meetingUrl, setMeetingUrl] = useState(initial?.meetingUrl ?? "");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: FormEvent) => {
@@ -51,7 +65,18 @@ export function PatientForm({
       return;
     }
 
+    const minutes = Number(sessionMinutes);
+    if (schedule.some((slot) => !/^\d{2}:\d{2}$/.test(slot.time))) {
+      setError("Completa la hora de cada día del horario.");
+      return;
+    }
+    if (meetingUrl.trim() && !/^https?:\/\//i.test(meetingUrl.trim())) {
+      setError("El enlace de videollamada debe empezar con https://");
+      return;
+    }
+
     onSubmit({
+      ...initial,
       name: name.trim(),
       startDate,
       status,
@@ -62,6 +87,9 @@ export function PatientForm({
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
       adminNotes: adminNotes.trim() || undefined,
+      schedule: schedule.length > 0 ? schedule : undefined,
+      sessionMinutes: Number.isFinite(minutes) && minutes > 0 ? minutes : undefined,
+      meetingUrl: meetingUrl.trim() || undefined,
     });
   };
 
@@ -73,7 +101,7 @@ export function PatientForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nombre completo del paciente"
-          autoFocus
+          autoFocus={!initial}
         />
       </FormField>
 
@@ -87,17 +115,29 @@ export function PatientForm({
           />
         </FormField>
 
-        <FormField label="Estado" htmlFor={`${formId}-status`} required>
+        <FormField
+          label="Estado"
+          htmlFor={`${formId}-status`}
+          required
+          hint={
+            status === "inactivo"
+              ? "Para reactivarlo usa la casilla “Ya no viene a terapia” en su ficha."
+              : "Si deja de venir, márcalo en su ficha con la casilla “Ya no viene a terapia”."
+          }
+        >
           <Select
             id={`${formId}-status`}
             value={status}
+            disabled={status === "inactivo"}
             onChange={(e) => setStatus(e.target.value as PatientStatus)}
           >
-            {Object.entries(patientStatusLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
+            {Object.entries(patientStatusLabels)
+              .filter(([value]) => value !== "inactivo" || status === "inactivo")
+              .map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
           </Select>
         </FormField>
       </div>
@@ -193,6 +233,76 @@ export function PatientForm({
         </FormField>
       </div>
 
+      <FormField
+        label="Horario habitual (opcional)"
+        hint="Sirve para llenar las sesiones del mes con un clic y para agregarlas a Google Calendar. No crea sesiones por sí solo."
+      >
+        <div className="flex flex-col gap-2">
+          {schedule.map((slot, i) => (
+            <div key={i} className="flex gap-2">
+              <Select
+                aria-label={`Día ${i + 1}`}
+                value={slot.weekday}
+                onChange={(e) =>
+                  setSchedule(schedule.map((s, j) => (j === i ? { ...s, weekday: Number(e.target.value) } : s)))
+                }
+              >
+                {weekdayLabels.map((label, day) => (
+                  <option key={day} value={day}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+              <Input
+                aria-label={`Hora ${i + 1}`}
+                type="time"
+                value={slot.time}
+                onChange={(e) => setSchedule(schedule.map((s, j) => (j === i ? { ...s, time: e.target.value } : s)))}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                aria-label="Quitar día"
+                onClick={() => setSchedule(schedule.filter((_, j) => j !== i))}
+              >
+                ✕
+              </Button>
+            </div>
+          ))}
+          <button
+            type="button"
+            className="self-start text-sm text-blue-accent"
+            onClick={() =>
+              setSchedule([...schedule, { weekday: schedule[schedule.length - 1]?.weekday ?? 1, time: schedule[schedule.length - 1]?.time ?? "17:00" }])
+            }
+          >
+            + Agregar día y hora
+          </button>
+        </div>
+      </FormField>
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormField label="Duración de la sesión (min)" htmlFor={`${formId}-minutes`}>
+          <Input
+            id={`${formId}-minutes`}
+            type="number"
+            min={10}
+            step="5"
+            value={sessionMinutes}
+            onChange={(e) => setSessionMinutes(e.target.value)}
+          />
+        </FormField>
+        <FormField label="Enlace de videollamada (opcional)" htmlFor={`${formId}-meeting`} hint="Zoom, Google Meet, etc.">
+          <Input
+            id={`${formId}-meeting`}
+            type="url"
+            value={meetingUrl}
+            onChange={(e) => setMeetingUrl(e.target.value)}
+            placeholder="https://zoom.us/j/…"
+          />
+        </FormField>
+      </div>
+
       <FormField label="Notas administrativas (opcional)" htmlFor={`${formId}-notes`}>
         <Textarea
           id={`${formId}-notes`}
@@ -209,7 +319,7 @@ export function PatientForm({
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button type="submit">Guardar paciente</Button>
+        <Button type="submit">{submitLabel}</Button>
       </div>
     </form>
   );

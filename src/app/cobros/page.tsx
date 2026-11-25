@@ -8,6 +8,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
 import { RegisterPaymentButton } from "@/components/payments/RegisterPaymentButton";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
 import { cn } from "@/lib/cn";
+import { appearsInMonth } from "@/lib/treatment";
 import { formatCurrency } from "@/lib/format";
 import {
   allPatientsTotalsByCurrency,
@@ -28,10 +29,16 @@ export default function CobrosPage() {
 
   const [month, setMonth] = useState(currentMonthKey());
 
-  const rows = patients.map((patient) => ({
-    patient,
-    totals: patientTotals(patient.id, sessions, payments, month),
-  }));
+  // Solo quienes estaban en tratamiento ese mes o tuvieron sesiones en él:
+  // un paciente que dejó de venir no aparece en los meses posteriores.
+  const rows = patients
+    .filter((patient) => appearsInMonth(patient, month, sessions))
+    .map((patient) => ({
+      patient,
+      totals: patientTotals(patient.id, sessions, payments, month),
+    }))
+    .sort((a, b) => a.patient.name.localeCompare(b.patient.name, "es"));
+  const hiddenCount = patients.length - rows.length;
 
   // Un total por moneda: sumar MXN y USD en una sola cifra sería incorrecto.
   const totalsByCurrency = allPatientsTotalsByCurrency(patients, sessions, payments, month);
@@ -45,7 +52,7 @@ export default function CobrosPage() {
       <Card>
         <CardHeader>
           <CardTitle>Corte del periodo</CardTitle>
-          <Select value={month} onChange={(e) => setMonth(e.target.value)} className="h-9 w-52">
+          <Select value={month} onChange={(e) => setMonth(e.target.value)} className="h-9 !w-52">
             {months.map((m) => (
               <option key={m} value={m}>
                 {monthLabel(m)}
@@ -109,6 +116,13 @@ export default function CobrosPage() {
               ))}
             </tfoot>
           </Table>
+          {hiddenCount > 0 ? (
+            <p className="mt-4 text-xs text-dark/50">
+              {hiddenCount} {hiddenCount === 1 ? "paciente no aparece" : "pacientes no aparecen"} porque ya no
+              {hiddenCount === 1 ? " venía" : " venían"} en {monthLabel(month).toLowerCase()} y no tienen sesiones en
+              ese mes.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
     </AppShell>
