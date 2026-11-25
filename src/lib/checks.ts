@@ -265,7 +265,7 @@ export function runChecks(
 
     // 10. Sesiones en $0 (gratis o sin capturar el costo).
     for (const session of own) {
-      if (session.amount <= 0) {
+      if (session.amount <= 0 && (session.attendance ?? "asistio") === "asistio") {
         issues.push({
           id: `sin-costo-${session.id}`,
           kind: "sesion-sin-costo",

@@ -17,7 +17,11 @@ export default defineConfig({
     ],
   },
   esbuild: { jsx: "automatic" },
-  define: { "process.env.NODE_ENV": JSON.stringify("production") },
+  define: {
+    "process.env.NODE_ENV": JSON.stringify("production"),
+    // Versión de prueba: sin cuentas, los datos quedan en el navegador.
+    "process.env.NEXT_PUBLIC_LOCAL_ONLY": JSON.stringify("1"),
+  },
   css: {
     postcss: { plugins: [tailwindcss({ config: here("../../tailwind.config.ts") }), autoprefixer()] },
   },

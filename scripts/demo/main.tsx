@@ -14,6 +14,7 @@ import RevisionPage from "@/app/revision/page";
 import ImportarPage from "@/app/importar/page";
 import AjustesPage from "@/app/ajustes/page";
 import VacacionesPage from "@/app/vacaciones/page";
+import AgendaPage from "@/app/agenda/page";
 import { usePathname } from "./shims/navigation";
 
 const routes: Record<string, () => JSX.Element> = {
@@ -26,6 +27,7 @@ const routes: Record<string, () => JSX.Element> = {
   "/importar": ImportarPage,
   "/ajustes": AjustesPage,
   "/vacaciones": VacacionesPage,
+  "/agenda": AgendaPage,
 };
 
 function App() {

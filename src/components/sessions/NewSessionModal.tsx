@@ -15,7 +15,9 @@ import { formatCurrency, formatDate, todayIso } from "@/lib/format";
 import { monthLabel } from "@/lib/metrics";
 import { isCurrentlyActive } from "@/lib/treatment";
 import { isOnVacation } from "@/lib/vacations";
-import type { PaymentMethod } from "@/lib/types";
+import { attendanceLabels, type Attendance, type PaymentMethod } from "@/lib/types";
+import { attendancePatch, isCharged } from "@/lib/attendance";
+import { cn } from "@/lib/cn";
 
 const methods: PaymentMethod[] = ["Transferencia", "Efectivo", "Tarjeta", "Otro"];
 
@@ -30,14 +32,18 @@ export function NewSessionModal({
   open,
   onClose,
   patientId,
+  initialDate,
 }: {
   open: boolean;
   onClose: () => void;
   patientId?: string;
+  /** Fecha con la que abre (p. ej. el día elegido en la Agenda). */
+  initialDate?: string;
 }) {
-  const { patients, sessions, vacations, addSessions, registerPayment } = useClinicData();
+  const { patients, sessions, vacations, profile, addSessions, registerPayment } = useClinicData();
   const [selectedPatientId, setSelectedPatientId] = useState(patientId ?? "");
-  const [dates, setDates] = useState<string[]>([todayIso()]);
+  const [dates, setDates] = useState<string[]>([initialDate ?? todayIso()]);
+  const [attendance, setAttendance] = useState<Attendance>("asistio");
   const [amount, setAmount] = useState(() => {
     const p = patients.find((pp) => pp.id === patientId);
     return p && p.costPerSession > 0 ? String(p.costPerSession) : "";
@@ -52,7 +58,8 @@ export function NewSessionModal({
   const patient = patients.find((p) => p.id === selectedPatientId);
   const amountNum = Number(amount);
   const validDates = dates.filter(Boolean);
-  const total = Number.isFinite(amountNum) ? amountNum * validDates.length : 0;
+  const charged = isCharged(attendance, profile);
+  const total = Number.isFinite(amountNum) && charged ? amountNum * validDates.length : 0;
 
   const repeated = useMemo(() => {
     const existing = new Set(sessions.filter((s) => s.patientId === selectedPatientId).map((s) => s.date));
@@ -114,7 +121,8 @@ export function NewSessionModal({
 
   function reset() {
     setSelectedPatientId(patientId ?? "");
-    setDates([todayIso()]);
+    setDates([initialDate ?? todayIso()]);
+    setAttendance("asistio");
     setAmountTouched(false);
     setNote("");
     setPaid(false);
@@ -150,8 +158,8 @@ export function NewSessionModal({
       [...validDates].sort().map((date) => ({
         patientId: selectedPatientId,
         date,
-        amount: amountNum,
         note: note.trim() || undefined,
+        ...(attendance === "asistio" ? { amount: amountNum } : attendancePatch({ amount: amountNum }, attendance, profile)),
       }))
     );
     if (paid && total > 0) {
@@ -247,13 +255,26 @@ export function NewSessionModal({
               />
             </FormField>
             <FormField label="Nota (opcional)">
-              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej. No asistió" />
+              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Ej. Doctoralia" />
             </FormField>
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={paid} onChange={(e) => setPaid(e.target.checked)} />
+        <FormField
+          label="Asistencia"
+          hint={charged ? undefined : "Según tu política de cancelación no se cobra: queda en $0."}
+        >
+          <Select value={attendance} onChange={(e) => setAttendance(e.target.value as Attendance)}>
+            {Object.entries(attendanceLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </FormField>
+
+        <label className={cn("flex items-center gap-2 text-sm", !charged && "opacity-40")}>
+          <Checkbox checked={paid && charged} disabled={!charged} onChange={(e) => setPaid(e.target.checked)} />
           Ya me {validDates.length > 1 ? "las" : "la"} pagaron
           {validDates.length > 0 && Number.isFinite(total) ? ` (${formatCurrency(total, patient?.currency)})` : ""}
         </label>

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Select } from "@/components/ui/Select";
 import { SessionStatusBadge } from "@/components/ui/SessionStatusBadge";
+import { AttendanceBadge } from "@/components/ui/AttendanceBadge";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
 import { EditSessionModal } from "@/components/sessions/EditSessionModal";
 import { NewSessionButton } from "@/components/sessions/NewSessionButton";
@@ -90,7 +91,8 @@ export default function SesionesPage() {
                       {formatCurrency(paid, currency)}
                     </Td>
                     <Td>
-                      <SessionStatusBadge status={status} />
+                      {session.amount > 0 ? <SessionStatusBadge status={status} /> : null}
+                      <AttendanceBadge session={session} />
                     </Td>
                     <Td align="right" className="pr-6">
                       <button type="button" className="text-xs text-blue-accent" onClick={() => setEditing(session)}>

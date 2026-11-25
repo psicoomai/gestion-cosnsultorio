@@ -109,6 +109,7 @@ export function applyImport(
         date,
         amount: draftSession.amount,
         note: draftSession.note,
+        attendance: draftSession.noShow ? "falto" : undefined,
       };
       sessions.push(session);
       createdSessions++;

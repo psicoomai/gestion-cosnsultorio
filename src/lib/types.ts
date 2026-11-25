@@ -95,9 +95,25 @@ export interface Session {
   date: string; // ISO
   /** Costo histórico de ESTA sesión. No cambia si después cambia la tarifa del paciente. */
   amount: number;
-  /** Nota libre (p. ej. "No asistió", "Doctoralia"). */
+  /** Nota libre (p. ej. "Doctoralia"). */
   note?: string;
+  /** Si asistió, faltó o canceló. Sin valor = asistió (sesiones anteriores o importadas). */
+  attendance?: Attendance;
+  /**
+   * Costo de la sesión antes de marcarla como no cobrada (cancelación): así,
+   * si se corrige a "asistió", recupera su costo original.
+   */
+  listPrice?: number;
 }
+
+export type Attendance = "asistio" | "falto" | "cancelo-tarde" | "cancelo";
+
+export const attendanceLabels: Record<Attendance, string> = {
+  asistio: "Asistió",
+  falto: "Faltó sin avisar",
+  "cancelo-tarde": "Canceló tarde",
+  cancelo: "Canceló con anticipación",
+};
 
 export type SessionStatus = "pagada" | "parcial" | "pendiente";
 
@@ -130,6 +146,14 @@ export interface Payment {
 export interface Profile {
   name: string;
   specialty?: string;
+  /** Datos para que te paguen (banco, CLABE, a nombre de…); se agregan a recordatorios y estados de cuenta. */
+  paymentDetails?: string;
+  /** Plantilla del recordatorio de pago por WhatsApp (ver src/lib/reminders.ts). */
+  reminderTemplate?: string;
+  /** Política de cancelación: si se cobra cuando el paciente falta sin avisar (por defecto sí). */
+  chargeNoShow?: boolean;
+  /** Política de cancelación: si se cobra cuando cancela tarde (por defecto sí). */
+  chargeLateCancel?: boolean;
 }
 
 /** Vacaciones (o días sin consulta) de quien usa la plataforma. */

@@ -1,9 +1,9 @@
 "use client";
 
 // Estado de la app. Los datos se cargan del almacenamiento al abrir la app y
-// se guardan solos después de cada cambio (ver src/lib/storage.ts). Hoy el
-// almacenamiento es el propio navegador; cuando exista un backend con
-// cuentas, solo cambia `createBrowserStore()` por la implementación remota.
+// se guardan solos después de cada cambio. El almacenamiento es la cuenta del
+// usuario en el servidor (src/lib/api-store.ts) o, en la versión de prueba,
+// el propio navegador (src/lib/storage.ts); las pantallas no distinguen.
 //
 // Todas las operaciones que borran algo limpian también sus referencias
 // (borrar un paciente borra sus sesiones y pagos; borrar una sesión la quita
@@ -20,6 +20,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { ConflictError } from "@/lib/api-store";
 import { generateId } from "@/lib/id";
 import { initialPatients, initialPayments, initialSessions } from "@/lib/mock-data";
 import {
@@ -37,12 +38,16 @@ export type NewSessionInput = Omit<Session, "id">;
 
 export type NewPaymentInput = Omit<Payment, "id" | "createdAt">;
 
-type SaveState = "idle" | "saving" | "saved" | "error";
+type SaveState = "idle" | "saving" | "saved" | "error" | "conflict";
 
 interface ClinicDataContextValue {
   /** `false` mientras se leen los datos guardados; las pantallas muestran un estado de carga. */
   hydrated: boolean;
   saveState: SaveState;
+  /** Dónde viven los datos: en la cuenta (servidor) o solo en este navegador. */
+  storage: "cuenta" | "navegador";
+  /** Nombre y especialidad de la cuenta, para prellenar la bienvenida. */
+  suggestedProfile: Profile | null;
   profile: Profile | null;
   patients: Patient[];
   sessions: Session[];
@@ -88,11 +93,17 @@ const SAVE_DELAY_MS = 250;
 export function ClinicDataProvider({
   children,
   store: providedStore,
+  suggestedProfile = null,
 }: {
   children: ReactNode;
   store?: ClinicStore;
+  suggestedProfile?: Profile | null;
 }) {
   const storeRef = useRef<ClinicStore | null>(providedStore ?? null);
+  const storage = providedStore ? "cuenta" : "navegador";
+  // Los guardados van en fila: cada uno espera al anterior, así la versión
+  // que se manda al servidor siempre es la más reciente.
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
   const [hydrated, setHydrated] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [profile, setProfileState] = useState<Profile | null>(null);
@@ -137,19 +148,28 @@ export function ClinicDataProvider({
       return;
     }
     setSaveState("saving");
+    const snapshot: ClinicSnapshot = {
+      version: SNAPSHOT_VERSION,
+      profile,
+      patients,
+      sessions,
+      payments,
+      vacations,
+      updatedAt: new Date().toISOString(),
+    };
     const timer = setTimeout(() => {
-      storeRef.current
-        ?.save({
-          version: SNAPSHOT_VERSION,
-          profile,
-          patients,
-          sessions,
-          payments,
-          vacations,
-          updatedAt: new Date().toISOString(),
-        })
-        .then(() => setSaveState("saved"))
-        .catch(() => setSaveState("error"));
+      saveChain.current = saveChain.current
+        .then(() => (canSave.current ? storeRef.current?.save(snapshot) : undefined))
+        .then(() => setSaveState((s) => (s === "conflict" ? s : "saved")))
+        .catch((err) => {
+          if (err instanceof ConflictError) {
+            // Otro dispositivo guardó antes: no se sobrescribe nada.
+            canSave.current = false;
+            setSaveState("conflict");
+          } else {
+            setSaveState("error");
+          }
+        });
     }, SAVE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [hydrated, profile, patients, sessions, payments, vacations]);
@@ -165,6 +185,8 @@ export function ClinicDataProvider({
     () => ({
       hydrated,
       saveState,
+      storage,
+      suggestedProfile,
       profile,
       patients,
       sessions,
@@ -266,7 +288,7 @@ export function ClinicDataProvider({
         };
       },
     }),
-    [hydrated, saveState, profile, patients, sessions, payments, vacations, replaceData]
+    [hydrated, saveState, storage, suggestedProfile, profile, patients, sessions, payments, vacations, replaceData]
   );
 
   return <ClinicDataContext.Provider value={value}>{children}</ClinicDataContext.Provider>;

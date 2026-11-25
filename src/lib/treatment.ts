@@ -51,3 +51,9 @@ export function lastSessionDate(patientId: string, sessions: Session[]): string 
     .sort()
     .pop();
 }
+
+/** `true` si el paciente estaba en tratamiento en esa fecha (yyyy-mm-dd). */
+export function isActiveOn(patient: Patient, date: string): boolean {
+  if (patient.status === "inactivo" && !patient.endDate) return false;
+  return treatmentPeriods(patient).some((p) => p.start <= date && (!p.end || date <= p.end));
+}

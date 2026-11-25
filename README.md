@@ -52,10 +52,25 @@ su diferencia (debe ser $0).
   por sí solo.
 - **Sesiones**: registrar una o varias a la vez (opcionalmente ya pagadas),
   editar fecha/costo/nota y eliminar. Cada sesión conserva su costo histórico.
+- **Asistencia y cancelaciones**: cada sesión se marca como asistió, faltó
+  sin avisar, canceló tarde o canceló con anticipación. La política de
+  cancelación (Ajustes → Cobranza) decide qué se cobra; lo que no se cobra
+  queda en $0 y guarda su costo por si se corrige. La columna "Asistencia" del
+  Excel se importa como faltas. Cada paciente muestra su porcentaje de
+  asistencia.
+- **Agenda semanal**: las sesiones registradas y las que tocan según el
+  horario de cada paciente activo (sin vacaciones ni pacientes de baja;
+  quincenales cada dos semanas). Cada sesión esperada se registra con un clic:
+  asistió, asistió y pagó, faltó o canceló.
 - **Pagos**: manual (aplicado a una o varias sesiones) o desde comprobante
   (extracción **simulada**, `src/lib/mock-ocr.ts`); edición y eliminación;
   aviso de posibles duplicados antes de registrar.
 - **Cobros**: corte generado/cobrado/pendiente por paciente y mes.
+- **Cobranza**: recordatorio de pago por WhatsApp con un clic (el mensaje se
+  arma con las sesiones pendientes y tus datos para pago; se revisa antes de
+  enviarlo) y **estado de cuenta en PDF** por paciente (pendiente, por año o
+  todo el historial). La plantilla del mensaje y los datos para pago se
+  configuran en Ajustes.
 - **Corte anual**: equivalente a la hoja TOTALES — Real, Cobrado y Por cobrar,
   ingresos por mes, tabla paciente × mes y cuadre. **Descargar Excel** genera
   un libro con TOTALES + una hoja por paciente cuyas fórmulas no pueden
@@ -78,8 +93,9 @@ su diferencia (debe ser $0).
 - **Vacaciones**: registra tus días sin consulta. Se marcan en el corte
   anual, no se llenan sesiones en esos días desde el horario, y Revisión
   avisa si se registró una sesión dentro de ellas.
-- **Ajustes y respaldo**: perfil, descargar/restaurar respaldo (.json),
-  datos de ejemplo y borrar todo.
+- **Ajustes y respaldo**: perfil, cobranza y política de cancelación, cuenta
+  (cambiar contraseña, eliminar la cuenta), descargar/restaurar respaldo
+  (.json), datos de ejemplo y borrar todo.
 
 ## Calendario y videollamadas
 
@@ -96,44 +112,56 @@ Lo que requiere un paso más (y una decisión de quien opera la plataforma):
 sincronización automática en ambos sentidos con Google Calendar (p. ej. que
 cada evento atendido se registre como sesión) y crear reuniones de Zoom
 desde la app. Ambas necesitan OAuth (un proyecto en Google Cloud y una app en
-el Zoom Marketplace) y un servidor que guarde los tokens de cada persona, así
-que van junto con las cuentas de usuario (ver "Datos").
+el Zoom Marketplace) además de las cuentas que ya existen.
 
-## Datos
+## Cuentas y datos
 
-Los datos se guardan **solo en el navegador** de quien usa la app
-(IndexedDB, `src/lib/storage.ts`): no se envían a ningún servidor. Cada
-persona que abre la plataforma tiene sus propios datos, privados, en su
-dispositivo. La contracara: no se sincronizan entre dispositivos y se
-pierden si se borran los datos del navegador — por eso **Ajustes → Descargar
-respaldo**.
+Cada persona **crea su cuenta** (correo y contraseña) y ve solo su consulta,
+desde cualquier dispositivo:
 
-Toda la app habla con la interfaz `ClinicStore`; para agregar cuentas de
-usuario y sincronización en la nube basta con una implementación remota
-(p. ej. una API con base de datos y autenticación) sin tocar pantallas ni
-cálculos.
+- Servidor: rutas de Next.js en `src/app/api/` con la lógica en
+  `src/server/` (probada en `src/server/routes.test.ts`).
+- Base de datos: PostgreSQL (`DATABASE_URL`). Sin ella, en desarrollo se usa
+  PGlite, un PostgreSQL embebido en `.data/pglite`, sin instalar nada.
+- Contraseñas con scrypt; sesión en una cookie httpOnly (30 días); bloqueo de
+  15 minutos tras 5 intentos fallidos; verificación de origen en todo lo que
+  modifica datos; encabezados de seguridad (`next.config.mjs`).
+- Los datos de cada consultorio se guardan **cifrados con AES-256-GCM**
+  (`DATA_ENCRYPTION_KEY`) y con número de versión: si dos dispositivos guardan
+  a la vez, el segundo recibe un aviso en lugar de borrar lo del primero.
+- Aviso de privacidad en `/privacidad` (**plantilla**: hay que completarla y
+  revisarla con asesoría legal antes de invitar a otras personas) y aceptación
+  obligatoria al crear la cuenta. Desde Ajustes se descargan todos los datos
+  y se elimina la cuenta.
+- Pendiente: recuperar la contraseña por correo (requiere un servicio de
+  envío de correos).
+
+## Publicar (Vercel + Neon)
+
+1. En [vercel.com](https://vercel.com), crear cuenta con GitHub e importar
+   este repositorio (Add New → Project).
+2. En el proyecto: Storage → agregar **Neon (Postgres)**. Esto define
+   `DATABASE_URL`.
+3. En Settings → Environment Variables, agregar `DATA_ENCRYPTION_KEY` con 64
+   caracteres hexadecimales (`openssl rand -hex 32`). Guardarla también en un
+   lugar seguro: sin ella los datos guardados no se pueden leer.
+4. Desplegar. Ver `.env.example`.
 
 ## Versión de prueba (sin instalar nada)
 
 `npm run build:demo` compila la app como una sola página (`out-demo/`) que
 funciona sin servidor: la misma app, con un router en memoria en lugar del de
-Next.js (`scripts/demo/`). Se publica como página privada de claude.ai para
-probarla desde el navegador; ahí las descargas pasan por la confirmación del
-visor y los datos quedan en el navegador de quien la abre.
-
-## Siguiente paso: cuentas de usuario
-
-Para que cada persona inicie sesión y vea su consultorio desde cualquier
-dispositivo, falta un servidor con base de datos y autenticación (y es lo
-mismo que necesita la sincronización con Google Calendar y Zoom). La app ya
-está preparada: solo hay que implementar `ClinicStore` contra una API.
+Next.js (`scripts/demo/`) y sin cuentas (`NEXT_PUBLIC_LOCAL_ONLY`): los datos
+quedan en el navegador de quien la abre. Se publica como página privada de
+claude.ai; ahí las descargas pasan por la confirmación del visor.
 
 ## Scripts
 
 - `npm run dev` — servidor de desarrollo.
 - `npm run build` — build de producción.
 - `npm test` — pruebas (Vitest): cálculos, revisión, importador, exportación,
-  calendario, periodos de tratamiento, lecturas del año y vacaciones.
+  calendario, periodos de tratamiento, lecturas del año, vacaciones, cobranza,
+  asistencia, agenda y la API de cuentas (con PostgreSQL embebido).
 - `npm run build:demo` — versión de prueba de una sola página en `out-demo/`.
 - `npm run lint` — lint de Next.js/ESLint.
 - `npm run check:colors` — audita el repositorio en busca de cualquier color

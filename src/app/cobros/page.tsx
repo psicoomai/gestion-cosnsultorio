@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
 import { RegisterPaymentButton } from "@/components/payments/RegisterPaymentButton";
+import { ReminderButton } from "@/components/billing/ReminderButton";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
 import { cn } from "@/lib/cn";
 import { appearsInMonth } from "@/lib/treatment";
@@ -87,6 +88,11 @@ export default function CobrosPage() {
                     className={cn("pr-6", t.pending > 0 ? "font-medium text-debt-red" : "text-dark/40")}
                   >
                     {t.pending > 0 ? formatCurrency(t.pending, patient.currency) : "—"}
+                    {t.pending > 0 ? (
+                      <span className="mt-0.5 block">
+                        <ReminderButton patient={patient} compact />
+                      </span>
+                    ) : null}
                   </Td>
                 </Tr>
               ))}

@@ -6,15 +6,19 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
+import { attendanceOf, attendancePatch, isCharged } from "@/lib/attendance";
 import { formatDate } from "@/lib/format";
-import type { Session } from "@/lib/types";
+import { attendanceLabels, type Attendance, type Session } from "@/lib/types";
 
-/** Corrige la fecha, el costo o la nota de una sesión, o la elimina. */
+/** Corrige la fecha, el costo, la asistencia o la nota de una sesión, o la elimina. */
 export function EditSessionModal({ session, onClose }: { session: Session | null; onClose: () => void }) {
-  const { updateSession, deleteSession, payments } = useClinicData();
+  const { updateSession, deleteSession, payments, profile } = useClinicData();
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
+  const [attendance, setAttendance] = useState<Attendance>("asistio");
+  const [listPrice, setListPrice] = useState<number | undefined>(undefined);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -23,6 +27,8 @@ export function EditSessionModal({ session, onClose }: { session: Session | null
     if (!session) return;
     setDate(session.date);
     setAmount(String(session.amount));
+    setAttendance(attendanceOf(session));
+    setListPrice(session.listPrice);
     setNote(session.note ?? "");
     setError(null);
   }, [session]);
@@ -40,7 +46,13 @@ export function EditSessionModal({ session, onClose }: { session: Session | null
       setError("Ingresa un costo válido (0 si fue gratuita).");
       return;
     }
-    updateSession(session!.id, { date, amount: amountNum, note: note.trim() || undefined });
+    updateSession(session!.id, {
+      date,
+      amount: amountNum,
+      attendance: attendance === "asistio" && !session!.attendance ? undefined : attendance,
+      listPrice: amountNum === 0 ? listPrice : undefined,
+      note: note.trim() || undefined,
+    });
     onClose();
   }
 
@@ -56,6 +68,31 @@ export function EditSessionModal({ session, onClose }: { session: Session | null
               <Input type="number" min={0} step="any" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </FormField>
           </div>
+          <FormField
+            label="Asistencia"
+            hint={
+              isCharged(attendance, profile)
+                ? "Se cobra la sesión."
+                : "No se cobra: queda en $0 y se guarda su costo por si lo corriges después."
+            }
+          >
+            <Select
+              value={attendance}
+              onChange={(e) => {
+                const next = e.target.value as Attendance;
+                const patch = attendancePatch({ amount: Number(amount) || 0, listPrice }, next, profile);
+                setAttendance(next);
+                setAmount(String(patch.amount));
+                setListPrice(patch.listPrice);
+              }}
+            >
+              {Object.entries(attendanceLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </FormField>
           <FormField label="Nota (opcional)">
             <Input value={note} onChange={(e) => setNote(e.target.value)} />
           </FormField>

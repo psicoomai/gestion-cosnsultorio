@@ -6,6 +6,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PatientStatusBadge } from "@/components/ui/PatientStatusBadge";
 import { SessionStatusBadge } from "@/components/ui/SessionStatusBadge";
+import { AttendanceBadge } from "@/components/ui/AttendanceBadge";
+import { attendanceStats, describeAttendance } from "@/lib/attendance";
 import { Select } from "@/components/ui/Select";
 import { StatCard } from "@/components/ui/StatCard";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
@@ -15,6 +17,8 @@ import { RegisterPaymentButton } from "@/components/payments/RegisterPaymentButt
 import { AttachReceiptButton } from "@/components/payments/AttachReceiptButton";
 import { EditPaymentModal } from "@/components/payments/EditPaymentModal";
 import { EditPatientButton } from "@/components/patients/EditPatientButton";
+import { ReminderButton } from "@/components/billing/ReminderButton";
+import { StatementButton } from "@/components/billing/StatementButton";
 import { ScheduleCard } from "@/components/patients/ScheduleCard";
 import { TreatmentCard } from "@/components/patients/TreatmentCard";
 import { EditSessionModal } from "@/components/sessions/EditSessionModal";
@@ -107,6 +111,8 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
       }
       actions={
         <>
+          <ReminderButton patient={patient} />
+          <StatementButton patient={patient} />
           <EditPatientButton patient={patient} />
           <NewSessionButton patientId={patient.id} variant="secondary">
             Registrar sesiones
@@ -199,6 +205,9 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
       )}
 
       <h2 className="mb-3 mt-8 font-serif text-lg text-dark">Histórico</h2>
+      <p className="-mt-1 mb-3 text-sm text-dark/65">
+        Asistencia: {describeAttendance(attendanceStats(sessions.filter((s) => s.patientId === patient.id)))}
+      </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard label="Total pagado histórico" value={formatCurrency(historic.paid, patient.currency)} />
         <StatCard
@@ -246,7 +255,8 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
                           {formatCurrency(paid, patient.currency)}
                         </Td>
                         <Td>
-                          <SessionStatusBadge status={sessionStatus(session, paid)} />
+                          {session.amount > 0 ? <SessionStatusBadge status={sessionStatus(session, paid)} /> : null}
+                          <AttendanceBadge session={session} />
                         </Td>
                         <Td align="right">
                           <button

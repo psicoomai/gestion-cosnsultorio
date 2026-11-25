@@ -6,9 +6,10 @@ import { NewSessionModal } from "@/components/sessions/NewSessionModal";
 
 export function NewSessionButton({
   patientId,
+  initialDate,
   children,
   ...buttonProps
-}: { patientId?: string } & ButtonProps) {
+}: { patientId?: string; initialDate?: string } & ButtonProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -16,7 +17,9 @@ export function NewSessionButton({
       <Button onClick={() => setOpen(true)} {...buttonProps}>
         {children ?? "Nueva sesión"}
       </Button>
-      <NewSessionModal open={open} onClose={() => setOpen(false)} patientId={patientId} />
+      {open ? (
+        <NewSessionModal open onClose={() => setOpen(false)} patientId={patientId} initialDate={initialDate} />
+      ) : null}
     </>
   );
 }

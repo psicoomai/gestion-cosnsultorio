@@ -61,6 +61,8 @@ export interface DraftSession {
   /** `true` si la fecha de pago venía escrita en el Excel (si no, se usa la de la sesión). */
   paymentDateExplicit: boolean;
   note?: string;
+  /** "no" en la columna Asistencia: faltó (se conserva el monto que tenía el Excel). */
+  noShow?: boolean;
 }
 
 export interface DraftPatient {
@@ -330,6 +332,7 @@ interface RawPatientRow {
   pending: number;
   paymentDate: string | null;
   note?: string;
+  noShow: boolean;
 }
 
 function parsePatientSheet(sheet: RawSheet, cols: Partial<Record<ColumnKey, number>>): DraftPatient {
@@ -353,7 +356,6 @@ function parsePatientSheet(sheet: RawSheet, cols: Partial<Record<ColumnKey, numb
       continue;
     }
     const noteParts = [text(get("method"))];
-    if (normalize(get("attendance")) === "no") noteParts.push("No asistió");
     rawRows.push({
       row,
       date,
@@ -362,6 +364,7 @@ function parsePatientSheet(sheet: RawSheet, cols: Partial<Record<ColumnKey, numb
       pending,
       paymentDate: toIsoDate(get("paymentDate")),
       note: noteParts.filter(Boolean).join(" · ") || undefined,
+      noShow: normalize(get("attendance")) === "no",
     });
   }
 
@@ -464,6 +467,7 @@ function parsePatientSheet(sheet: RawSheet, cols: Partial<Record<ColumnKey, numb
       fixedPaymentDate,
       paymentDateExplicit: r.paid > 0 && Boolean(r.paymentDate),
       note: r.note,
+      noShow: r.noShow || undefined,
     });
   }
 

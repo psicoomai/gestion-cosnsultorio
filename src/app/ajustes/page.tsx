@@ -9,6 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { FormField } from "@/components/ui/FormField";
 import { Input } from "@/components/ui/Input";
+import { AccountCard } from "@/components/auth/AccountCard";
+import { BillingSettingsCard } from "@/components/billing/BillingSettingsCard";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
 import { downloadBlob } from "@/lib/download";
 import { todayIso } from "@/lib/format";
@@ -16,7 +19,8 @@ import { parseSnapshot } from "@/lib/storage";
 
 export default function AjustesPage() {
   const data = useClinicData();
-  const { profile, setProfile, patients, sessions, payments } = data;
+  const { profile, setProfile, patients, sessions, payments, storage } = data;
+  const auth = useAuth();
   const [name, setName] = useState(profile?.name ?? "");
   const [specialty, setSpecialty] = useState(profile?.specialty ?? "");
   const [message, setMessage] = useState<{ tone: "info" | "accent"; text: string } | null>(null);
@@ -30,7 +34,8 @@ export default function AjustesPage() {
       setMessage({ tone: "accent", text: "El nombre no puede quedar vacío." });
       return;
     }
-    setProfile({ name: name.trim(), specialty: specialty.trim() || undefined });
+    setProfile({ ...profile, name: name.trim(), specialty: specialty.trim() || undefined });
+    if (auth?.user) void auth.updateProfile({ name: name.trim(), specialty: specialty.trim() }).catch(() => undefined);
     setMessage({ tone: "info", text: "Perfil actualizado." });
   }
 
@@ -79,16 +84,29 @@ export default function AjustesPage() {
           </CardContent>
         </Card>
 
+        <BillingSettingsCard />
+
+        <AccountCard />
+
         <Card>
           <CardHeader>
             <CardTitle>Respaldo</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 pt-0 text-sm text-dark/75">
-            <p>
-              Tus datos ({patients.length} pacientes, {sessions.length} sesiones, {payments.length} pagos) se
-              guardan solo en este navegador. Si borras los datos del navegador o cambias de computadora, se
-              pierden: descarga un respaldo con frecuencia y guárdalo en un lugar seguro.
-            </p>
+            {storage === "cuenta" ? (
+              <p>
+                Tus datos ({patients.length} pacientes, {sessions.length} sesiones, {payments.length} pagos) se
+                guardan cifrados en tu cuenta. Aun así, descarga un respaldo de vez en cuando y guárdalo en un lugar
+                seguro. Con &quot;Restaurar un respaldo&quot; también puedes subir aquí los datos que tenías en la
+                versión de prueba.
+              </p>
+            ) : (
+              <p>
+                Tus datos ({patients.length} pacientes, {sessions.length} sesiones, {payments.length} pagos) se
+                guardan solo en este navegador. Si borras los datos del navegador o cambias de computadora, se
+                pierden: descarga un respaldo con frecuencia y guárdalo en un lugar seguro.
+              </p>
+            )}
             <div className="flex flex-wrap gap-2">
               <Button onClick={downloadBackup}>Descargar respaldo (.json)</Button>
               <Button variant="secondary" onClick={() => fileRef.current?.click()}>
@@ -158,7 +176,11 @@ export default function AjustesPage() {
       <ConfirmModal
         open={confirm === "borrar"}
         title="¿Borrar todos tus datos?"
-        message="Se borrarán tu perfil, pacientes, sesiones y pagos de este navegador. No se puede deshacer."
+        message={
+          storage === "cuenta"
+            ? "Se borrarán tus pacientes, sesiones, pagos y vacaciones de tu cuenta (la cuenta sigue existiendo). No se puede deshacer."
+            : "Se borrarán tu perfil, pacientes, sesiones y pagos de este navegador. No se puede deshacer."
+        }
         confirmLabel="Borrar todo"
         onClose={() => setConfirm(null)}
         onConfirm={() => {

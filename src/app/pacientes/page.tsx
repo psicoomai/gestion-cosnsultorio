@@ -12,6 +12,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
 import { AddPatientButton } from "@/components/patients/AddPatientButton";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
 import { buildIcs, describeSchedule } from "@/lib/calendar";
+import { attendanceStats } from "@/lib/attendance";
 import { cn } from "@/lib/cn";
 import { downloadBlob } from "@/lib/download";
 import { formatCurrency, formatDate, todayIso } from "@/lib/format";
@@ -127,6 +128,7 @@ export default function PacientesPage() {
                 <Th>Horario</Th>
                 <Th>Modalidad de pago</Th>
                 <Th align="right">Costo/sesión</Th>
+                <Th align="right">Asistencia</Th>
                 <Th align="right">Sesiones del mes</Th>
                 <Th align="right">Pagado del mes</Th>
                 <Th align="right">Pendiente del mes</Th>
@@ -157,6 +159,19 @@ export default function PacientesPage() {
                     <Td className="text-dark/70">{describeSchedule(patient)}</Td>
                     <Td className="text-dark/70">{paymentModalityLabels[patient.paymentModality]}</Td>
                     <Td align="right">{formatCurrency(patient.costPerSession, patient.currency)}</Td>
+                    <Td align="right">
+                      {(() => {
+                        const stats = attendanceStats(sessions.filter((sess) => sess.patientId === patient.id));
+                        if (stats.rate === null) return <span className="text-dark/40">—</span>;
+                        const missed = stats.noShows + stats.lateCancels;
+                        return (
+                          <span title={`${stats.noShows} faltas, ${stats.lateCancels} cancelaciones tarde, ${stats.cancels} cancelaciones`}>
+                            {Math.round(stats.rate * 100)}%
+                            {missed > 0 ? <span className="ml-1 text-xs text-orange-accent">({missed} sin aviso)</span> : null}
+                          </span>
+                        );
+                      })()}
+                    </Td>
                     <Td align="right">{monthTotals.sessionsCount}</Td>
                     <Td align="right">{formatCurrency(monthTotals.paid, patient.currency)}</Td>
                     <Td

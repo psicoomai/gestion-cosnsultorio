@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ReconciliationCard } from "@/components/review/ReconciliationCard";
+import { ReminderButton } from "@/components/billing/ReminderButton";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
 import { cn } from "@/lib/cn";
 import { issueKindLabels, runChecks, unappliedTotal, type Issue, type IssueKind } from "@/lib/checks";
@@ -34,6 +35,7 @@ export default function RevisionPage() {
   }, [issues]);
 
   const toReview = issues.filter((i) => i.severity === "atencion").length;
+  const patientById = new Map(patients.map((p) => [p.id, p]));
 
   return (
     <AppShell
@@ -71,12 +73,14 @@ export default function RevisionPage() {
                           </p>
                           <p className="mt-0.5 text-sm text-dark/65">{issue.detail}</p>
                         </div>
-                        <Link
-                          href={`/pacientes/${issue.patientId}`}
-                          className="shrink-0 text-sm text-blue-accent"
-                        >
-                          Corregir →
-                        </Link>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <Link href={`/pacientes/${issue.patientId}`} className="text-sm text-blue-accent">
+                            {issue.severity === "adeudo" ? "Ver paciente →" : "Corregir →"}
+                          </Link>
+                          {issue.kind === "pendiente-antiguo" && patientById.get(issue.patientId) ? (
+                            <ReminderButton patient={patientById.get(issue.patientId)!} compact />
+                          ) : null}
+                        </div>
                       </li>
                     ))}
                   </ul>

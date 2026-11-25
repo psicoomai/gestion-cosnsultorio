@@ -15,10 +15,10 @@ type Start = "importar" | "vacio" | "ejemplo";
  * navegador — se dice explícitamente para que nadie asuma que hay una nube.
  */
 export function Welcome() {
-  const { setProfile, loadExampleData } = useClinicData();
+  const { setProfile, loadExampleData, suggestedProfile, storage } = useClinicData();
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [specialty, setSpecialty] = useState("");
+  const [name, setName] = useState(suggestedProfile?.name ?? "");
+  const [specialty, setSpecialty] = useState(suggestedProfile?.specialty ?? "");
   const [error, setError] = useState<string | null>(null);
 
   function start(e: FormEvent, how: Start) {
@@ -72,8 +72,9 @@ export function Welcome() {
         </div>
 
         <p className="mt-8 text-xs leading-relaxed text-dark/50">
-          Tus datos se guardan únicamente en este navegador, en este dispositivo: no se envían a ningún
-          servidor. Descarga un respaldo de vez en cuando desde Ajustes.
+          {storage === "cuenta"
+            ? "Tus datos se guardan cifrados en tu cuenta y solo tú puedes verlos. Puedes entrar desde cualquier dispositivo y descargar un respaldo cuando quieras desde Ajustes."
+            : "Tus datos se guardan únicamente en este navegador, en este dispositivo: no se envían a ningún servidor. Descarga un respaldo de vez en cuando desde Ajustes."}
         </p>
       </form>
     </div>
