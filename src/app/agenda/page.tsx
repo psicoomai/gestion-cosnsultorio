@@ -170,7 +170,7 @@ export default function AgendaPage() {
                           className="h-8 w-full rounded border border-orange-accent/40 bg-background px-2 text-xs text-dark focus:border-blue-accent/60 focus:outline-none"
                         >
                           <option value="" disabled>
-                            Por registrar…
+                            Registrar…
                           </option>
                           {quickActions.map(([value, label]) => (
                             <option key={value} value={value}>
