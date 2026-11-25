@@ -73,7 +73,7 @@ export function EditPaymentModal({
         description={`${formatCurrency(payment.amount, currency)} del ${formatDate(payment.date)}`}
       >
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Monto" required>
               <Input type="number" min={0} step="any" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </FormField>
@@ -81,7 +81,7 @@ export function EditPaymentModal({
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </FormField>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Referencia">
               <Input value={reference} onChange={(e) => setReference(e.target.value)} />
             </FormField>

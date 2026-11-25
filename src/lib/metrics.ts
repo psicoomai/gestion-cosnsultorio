@@ -301,9 +301,11 @@ export function yearSummary(
   };
 }
 
-/** Años con al menos una sesión, más el año en curso (más reciente primero). */
+/** Años con al menos una sesión, más el año en curso y el próximo (más reciente primero). */
 export function availableYears(sessions: Session[]): number[] {
   const years = new Set(sessions.map((s) => Number(s.date.slice(0, 4))));
-  years.add(new Date().getFullYear());
+  const current = new Date().getFullYear();
+  years.add(current);
+  years.add(current + 1);
   return [...years].filter(Number.isFinite).sort((a, b) => b - a);
 }

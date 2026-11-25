@@ -65,14 +65,14 @@ export default function AjustesPage() {
             <CardTitle>Perfil</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <form onSubmit={saveProfile} className="grid grid-cols-2 items-end gap-4">
+            <form onSubmit={saveProfile} className="grid grid-cols-1 sm:grid-cols-2 items-end gap-4">
               <FormField label="Nombre" required>
                 <Input value={name} onChange={(e) => setName(e.target.value)} />
               </FormField>
               <FormField label="Especialidad">
                 <Input value={specialty} onChange={(e) => setSpecialty(e.target.value)} />
               </FormField>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Button type="submit">Guardar perfil</Button>
               </div>
             </form>

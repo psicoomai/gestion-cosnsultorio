@@ -43,7 +43,7 @@ export function Welcome() {
           que no entró en los totales.
         </p>
 
-        <div className="mt-8 grid grid-cols-2 gap-4">
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="Tu nombre" required>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej. Psic. Ana López" autoFocus />
           </FormField>

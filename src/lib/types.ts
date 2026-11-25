@@ -131,3 +131,11 @@ export interface Profile {
   name: string;
   specialty?: string;
 }
+
+/** Vacaciones (o días sin consulta) de quien usa la plataforma. */
+export interface Vacation {
+  id: string;
+  start: string; // ISO, inclusive
+  end: string; // ISO, inclusive
+  note?: string;
+}

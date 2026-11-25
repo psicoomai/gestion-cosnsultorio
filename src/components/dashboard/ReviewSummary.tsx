@@ -9,10 +9,10 @@ import { runChecks } from "@/lib/checks";
 
 /** Recordatorio en el panel: cuántos posibles errores de captura hay. */
 export function ReviewSummary() {
-  const { patients, sessions, payments } = useClinicData();
+  const { patients, sessions, payments, vacations } = useClinicData();
   const count = useMemo(
-    () => runChecks(patients, sessions, payments).filter((i) => i.severity === "atencion").length,
-    [patients, sessions, payments]
+    () => runChecks(patients, sessions, payments, new Date(), vacations).filter((i) => i.severity === "atencion").length,
+    [patients, sessions, payments, vacations]
   );
 
   return (

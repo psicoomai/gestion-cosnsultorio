@@ -4,7 +4,7 @@
 // con cuentas de usuario basta con escribir otra implementación (p. ej.
 // `createApiStore`) sin tocar pantallas ni cálculos.
 
-import type { Patient, Payment, Profile, Session } from "@/lib/types";
+import type { Patient, Payment, Profile, Session, Vacation } from "@/lib/types";
 
 export const SNAPSHOT_VERSION = 1;
 
@@ -12,6 +12,8 @@ export interface ClinicData {
   patients: Patient[];
   sessions: Session[];
   payments: Payment[];
+  /** Vacaciones propias. Opcional para leer respaldos anteriores. */
+  vacations?: Vacation[];
 }
 
 export interface ClinicSnapshot extends ClinicData {
@@ -92,7 +94,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
  */
 export function parseSnapshot(raw: unknown): ClinicSnapshot {
   if (!isObject(raw)) throw new Error("El archivo no contiene un respaldo válido.");
-  const { patients, sessions, payments, profile } = raw;
+  const { patients, sessions, payments, profile, vacations } = raw;
   if (!Array.isArray(patients) || !Array.isArray(sessions) || !Array.isArray(payments)) {
     throw new Error("El respaldo no tiene pacientes, sesiones y pagos.");
   }
@@ -125,9 +127,16 @@ export function parseSnapshot(raw: unknown): ClinicSnapshot {
       throw new Error("Hay un pago incompleto o de un paciente que no existe en el respaldo.");
     }
   }
+  const validVacations = Array.isArray(vacations)
+    ? vacations.filter(
+        (v): v is Vacation =>
+          isObject(v) && typeof v.id === "string" && typeof v.start === "string" && typeof v.end === "string"
+      )
+    : [];
   return {
     version: SNAPSHOT_VERSION,
     profile: isObject(profile) && typeof profile.name === "string" ? (profile as unknown as Profile) : null,
+    vacations: validVacations,
     patients: patients as Patient[],
     sessions: sessions as Session[],
     payments: payments as Payment[],

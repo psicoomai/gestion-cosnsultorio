@@ -14,6 +14,7 @@ const links = [
   { href: "/cobros", label: "Cobros" },
   { href: "/totales", label: "Corte anual" },
   { href: "/revision", label: "Revisión" },
+  { href: "/vacaciones", label: "Vacaciones" },
   { href: "/importar", label: "Importar Excel" },
   { href: "/ajustes", label: "Ajustes y respaldo" },
 ];
@@ -27,21 +28,21 @@ const saveLabels = {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { profile, patients, sessions, payments, saveState } = useClinicData();
+  const { profile, patients, sessions, payments, vacations, saveState } = useClinicData();
 
   // Solo cuenta lo que hay que revisar (no los adeudos, que ya se ven en Cobros).
   const reviewCount = useMemo(
-    () => runChecks(patients, sessions, payments).filter((i) => i.severity === "atencion").length,
-    [patients, sessions, payments]
+    () => runChecks(patients, sessions, payments, new Date(), vacations).filter((i) => i.severity === "atencion").length,
+    [patients, sessions, payments, vacations]
   );
 
   return (
-    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col bg-dark px-5 py-7">
-      <Link href="/" className="mb-10 block">
+    <aside className="bg-dark px-4 py-3 md:sticky md:top-0 md:flex md:h-screen md:w-60 md:shrink-0 md:flex-col md:px-5 md:py-7">
+      <Link href="/" className="mb-2 block md:mb-10">
         <span className="font-serif text-xl text-background">Consultorio</span>
       </Link>
 
-      <nav className="flex flex-1 flex-col gap-0.5">
+      <nav className="-mx-1 flex gap-0.5 overflow-x-auto pb-1 md:mx-0 md:flex-1 md:flex-col md:overflow-visible md:pb-0">
         {links.map((link) => {
           const isActive = link.href === "/" ? pathname === "/" : pathname?.startsWith(link.href);
           return (
@@ -49,7 +50,7 @@ export function Sidebar() {
               key={link.href}
               href={link.href}
               className={cn(
-                "flex items-center justify-between rounded-sm px-3 py-2 text-sm transition-colors",
+                "flex shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-sm px-3 py-2 text-sm transition-colors",
                 isActive
                   ? "bg-background/10 text-background"
                   : "text-background/60 hover:bg-background/[0.06] hover:text-background/90"
@@ -66,7 +67,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-background/10 pt-4">
+      <div className="hidden border-t border-background/10 pt-4 md:block">
         <p className="text-xs text-background/70">{profile?.name}</p>
         {profile?.specialty ? <p className="text-xs text-background/40">{profile.specialty}</p> : null}
         <p

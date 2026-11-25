@@ -132,7 +132,7 @@ export function PaymentModal({
             </Select>
           </FormField>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Monto" required>
               <Input
                 type="number"
@@ -147,7 +147,7 @@ export function PaymentModal({
             </FormField>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Referencia (opcional)">
               <Input
                 value={reference}

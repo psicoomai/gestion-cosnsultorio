@@ -188,7 +188,7 @@ export function ReceiptTab({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField label="Monto extraído" required>
           <Input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} />
         </FormField>
@@ -197,7 +197,7 @@ export function ReceiptTab({
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField label="Referencia extraída">
           <Input value={reference} onChange={(e) => setReference(e.target.value)} />
         </FormField>

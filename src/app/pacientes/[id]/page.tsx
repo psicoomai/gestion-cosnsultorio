@@ -52,7 +52,7 @@ const MONTH_NAMES = [
 ];
 
 export default function PatientDetailPage({ params }: { params: { id: string } }) {
-  const { patients, sessions, payments } = useClinicData();
+  const { patients, sessions, payments, vacations } = useClinicData();
   const patient = patients.find((p) => p.id === params.id);
 
   const months = useMemo(() => patientMonths(params.id, sessions), [params.id, sessions]);
@@ -62,8 +62,8 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const issues = useMemo(
-    () => runChecks(patients, sessions, payments).filter((i) => i.patientId === params.id),
-    [patients, sessions, payments, params.id]
+    () => runChecks(patients, sessions, payments, new Date(), vacations).filter((i) => i.patientId === params.id),
+    [patients, sessions, payments, vacations, params.id]
   );
   const year = Number((month ?? currentMonthKey()).slice(0, 4));
   const yearRow = useMemo(() => {
@@ -133,7 +133,7 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
         </div>
       ) : null}
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-md border border-dark/10 bg-background p-5 shadow-soft">
           <p className="text-xs font-semibold uppercase tracking-wideish text-dark/55">Estado</p>
           <div className="mt-2">
@@ -148,7 +148,7 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
         />
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-4">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <TreatmentCard patient={patient} />
         <ScheduleCard patient={patient} />
       </div>
@@ -183,7 +183,7 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
       </div>
 
       {monthTotals ? (
-        <div className="mt-3 grid grid-cols-5 gap-4">
+        <div className="mt-3 grid grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard label="Sesiones del mes" value={String(monthTotals.sessionsCount)} />
           <StatCard label="Honorarios" value={formatCurrency(monthTotals.generated, patient.currency)} />
           <StatCard label="Total pagado" value={formatCurrency(monthTotals.paid, patient.currency)} />
@@ -199,7 +199,7 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
       )}
 
       <h2 className="mb-3 mt-8 font-serif text-lg text-dark">Histórico</h2>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard label="Total pagado histórico" value={formatCurrency(historic.paid, patient.currency)} />
         <StatCard
           label="Total pendiente histórico"
@@ -213,7 +213,7 @@ export default function PatientDetailPage({ params }: { params: { id: string } }
         />
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4">
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Sesiones {month ? `· ${monthLabel(month)}` : ""}</CardTitle>

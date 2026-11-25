@@ -52,10 +52,10 @@ export default function DashboardPage() {
   return (
     <AppShell title="Panel" description={`Periodo: ${monthLabel(month)}`}>
       {/* 70% área principal / 30% panel lateral, como pide el layout de referencia. */}
-      <div className="grid grid-cols-10 gap-6">
-        <div className="col-span-7 flex flex-col gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+        <div className="lg:col-span-7 flex flex-col gap-6">
           {Object.entries(totalsByCurrency).map(([currency, totals]) => (
-            <div key={currency} className="grid grid-cols-4 gap-4">
+            <div key={currency} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
                 label={`Honorarios del mes${suffix(currency)}`}
                 value={formatCurrency(totals.generated, currency as "MXN" | "USD")}
@@ -81,7 +81,7 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Honorarios vs. cobrado (MXN)</CardTitle>
+              <CardTitle>Cobrado y por cobrar · últimos 6 meses (MXN)</CardTitle>
             </CardHeader>
             <CardContent>
               <RevenueChart data={revenueSeries} />
@@ -133,7 +133,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Panel lateral derecho — los tres bloques fijos, en este orden, más la revisión. */}
-        <div className="col-span-3 flex flex-col gap-6">
+        <div className="lg:col-span-3 flex flex-col gap-6">
           <QuickActions />
           <AccountsReceivable />
           <AiQuery />

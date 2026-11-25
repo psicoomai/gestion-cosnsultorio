@@ -70,6 +70,14 @@ su diferencia (debe ser $0).
   Health ("MES DONDE CORRESPONDE"). Ignora TOTALES/PLANTILLA, muestra una
   vista previa con totales y avisos, y puede volver a importarse el mismo
   archivo sin duplicar. Todo se lee en el navegador.
+- **Gráficas por año**: en el Corte anual se elige cualquier año (anteriores,
+  el actual o el próximo). Muestra el mejor mes, el mes más apretado, el
+  promedio mensual (solo meses ya cerrados), una gráfica de cobrado y por
+  cobrar por mes con tus vacaciones marcadas, y la comparación mes a mes con
+  el año anterior.
+- **Vacaciones**: registra tus días sin consulta. Se marcan en el corte
+  anual, no se llenan sesiones en esos días desde el horario, y Revisión
+  avisa si se registró una sesión dentro de ellas.
 - **Ajustes y respaldo**: perfil, descargar/restaurar respaldo (.json),
   datos de ejemplo y borrar todo.
 
@@ -105,12 +113,28 @@ usuario y sincronización en la nube basta con una implementación remota
 (p. ej. una API con base de datos y autenticación) sin tocar pantallas ni
 cálculos.
 
+## Versión de prueba (sin instalar nada)
+
+`npm run build:demo` compila la app como una sola página (`out-demo/`) que
+funciona sin servidor: la misma app, con un router en memoria en lugar del de
+Next.js (`scripts/demo/`). Se publica como página privada de claude.ai para
+probarla desde el navegador; ahí las descargas pasan por la confirmación del
+visor y los datos quedan en el navegador de quien la abre.
+
+## Siguiente paso: cuentas de usuario
+
+Para que cada persona inicie sesión y vea su consultorio desde cualquier
+dispositivo, falta un servidor con base de datos y autenticación (y es lo
+mismo que necesita la sincronización con Google Calendar y Zoom). La app ya
+está preparada: solo hay que implementar `ClinicStore` contra una API.
+
 ## Scripts
 
 - `npm run dev` — servidor de desarrollo.
 - `npm run build` — build de producción.
 - `npm test` — pruebas (Vitest): cálculos, revisión, importador, exportación,
-  calendario y periodos de tratamiento.
+  calendario, periodos de tratamiento, lecturas del año y vacaciones.
+- `npm run build:demo` — versión de prueba de una sola página en `out-demo/`.
 - `npm run lint` — lint de Next.js/ESLint.
 - `npm run check:colors` — audita el repositorio en busca de cualquier color
   (hex, `rgb()`, `hsl()`) fuera de la paleta autorizada.

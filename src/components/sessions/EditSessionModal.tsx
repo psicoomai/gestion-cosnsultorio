@@ -48,7 +48,7 @@ export function EditSessionModal({ session, onClose }: { session: Session | null
     <>
       <Modal open={!confirmDelete} onClose={onClose} title="Editar sesión" description={`Sesión del ${formatDate(session.date)}`}>
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Fecha" required hint="Cambiar la fecha la mueve al mes correspondiente.">
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </FormField>

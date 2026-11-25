@@ -14,6 +14,7 @@ import { describeSchedule, scheduleDates } from "@/lib/calendar";
 import { formatCurrency, formatDate, todayIso } from "@/lib/format";
 import { monthLabel } from "@/lib/metrics";
 import { isCurrentlyActive } from "@/lib/treatment";
+import { isOnVacation } from "@/lib/vacations";
 import type { PaymentMethod } from "@/lib/types";
 
 const methods: PaymentMethod[] = ["Transferencia", "Efectivo", "Tarjeta", "Otro"];
@@ -34,7 +35,7 @@ export function NewSessionModal({
   onClose: () => void;
   patientId?: string;
 }) {
-  const { patients, sessions, addSessions, registerPayment } = useClinicData();
+  const { patients, sessions, vacations, addSessions, registerPayment } = useClinicData();
   const [selectedPatientId, setSelectedPatientId] = useState(patientId ?? "");
   const [dates, setDates] = useState<string[]>([todayIso()]);
   const [amount, setAmount] = useState(() => {
@@ -77,12 +78,18 @@ export function NewSessionModal({
     if (patient.startDate > from) from = patient.startDate;
     if (patient.endDate && patient.endDate < to) to = patient.endDate;
     const existing = new Set(sessions.filter((s) => s.patientId === patient.id).map((s) => s.date));
-    const filled = scheduleDates(patient.schedule, from, to).filter((d) => !existing.has(d));
+    const candidates = scheduleDates(patient.schedule, from, to).filter((d) => !existing.has(d));
+    const filled = candidates.filter((d) => !isOnVacation(vacations, d));
+    const skippedForVacation = candidates.length - filled.length;
     if (filled.length === 0) {
       setError(`No hay fechas pendientes de registrar en ${monthLabel(todayIso(first).slice(0, 7)).toLowerCase()} según su horario.`);
       return;
     }
-    setError(null);
+    setError(
+      skippedForVacation > 0
+        ? `Se omitieron ${skippedForVacation} ${skippedForVacation === 1 ? "fecha" : "fechas"} que caen en tus vacaciones.`
+        : null
+    );
     setDates(filled);
   }
 
@@ -192,7 +199,7 @@ export function NewSessionModal({
           </div>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label={validDates.length > 1 ? "Fechas" : "Fecha"} required>
             <div className="flex flex-col gap-2">
               {dates.map((date, i) => (
@@ -252,7 +259,7 @@ export function NewSessionModal({
         </label>
 
         {paid ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Fecha de pago" required>
               <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
             </FormField>

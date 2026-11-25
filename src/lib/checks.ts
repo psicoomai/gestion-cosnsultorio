@@ -6,7 +6,8 @@
 // dato. Estas reglas buscan justo eso y lo explican en lenguaje simple.
 
 import { allocatePayments, roundCents } from "@/lib/metrics";
-import type { Patient, Payment, Session } from "@/lib/types";
+import type { Patient, Payment, Session, Vacation } from "@/lib/types";
+import { isOnVacation } from "@/lib/vacations";
 
 /** "adeudo" usa el rojo reservado; "atencion" el naranja; "info" es neutro. */
 export type IssueSeverity = "adeudo" | "atencion" | "info";
@@ -20,7 +21,8 @@ export type IssueKind =
   | "pago-fecha-rara"
   | "pendiente-antiguo"
   | "sesion-sin-costo"
-  | "sesion-despues-de-baja";
+  | "sesion-despues-de-baja"
+  | "sesion-en-vacaciones";
 
 export interface Issue {
   id: string;
@@ -42,6 +44,7 @@ export const issueKindLabels: Record<IssueKind, string> = {
   "pendiente-antiguo": "Adeudos de hace más de 30 días",
   "sesion-sin-costo": "Sesiones sin costo",
   "sesion-despues-de-baja": "Sesiones después de que el paciente dejó de venir",
+  "sesion-en-vacaciones": "Sesiones durante tus vacaciones",
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -66,7 +69,8 @@ export function runChecks(
   patients: Patient[],
   sessions: Session[],
   payments: Payment[],
-  today: Date = new Date()
+  today: Date = new Date(),
+  vacations: Vacation[] = []
 ): Issue[] {
   const issues: Issue[] = [];
   const todayTime = toTime(
@@ -246,7 +250,20 @@ export function runChecks(
       }
     }
 
-    // 9. Sesiones en $0 (gratis o sin capturar el costo).
+    // 9. Sesiones registradas en días de vacaciones.
+    const onVacation = own.filter((s) => isOnVacation(vacations, s.date));
+    if (onVacation.length > 0) {
+      issues.push({
+        id: `vacaciones-${patient.id}`,
+        kind: "sesion-en-vacaciones",
+        severity: "info",
+        patientId: patient.id,
+        title: `${patient.name}: ${onVacation.length} ${onVacation.length === 1 ? "sesión" : "sesiones"} en tus vacaciones`,
+        detail: `Fecha${onVacation.length === 1 ? "" : "s"}: ${onVacation.map((s) => short(s.date)).join(", ")}. Si sí diste esa sesión está bien; si no, revisa la fecha.`,
+      });
+    }
+
+    // 10. Sesiones en $0 (gratis o sin capturar el costo).
     for (const session of own) {
       if (session.amount <= 0) {
         issues.push({

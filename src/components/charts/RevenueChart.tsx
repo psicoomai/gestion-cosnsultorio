@@ -17,9 +17,12 @@ import type { monthlyTotals } from "@/lib/metrics";
 // Los colores de la gráfica se importan de theme-colors.ts (fuente única);
 // nunca se escriben hex/rgb sueltos aquí.
 export function RevenueChart({ data }: { data: ReturnType<typeof monthlyTotals> }) {
+  // Cobrado (azul) y por cobrar (rojo, reservado a adeudos) apilados: la
+  // altura total de cada barra son los honorarios del mes.
+  const rows = data.map((d) => ({ ...d, porCobrar: Math.max(0, d.generado - d.cobrado) }));
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={data} barGap={4} margin={{ left: -12, right: 8 }}>
+      <BarChart data={rows} margin={{ left: -12, right: 8 }} barCategoryGap="28%">
         <CartesianGrid
           vertical={false}
           stroke={themeColors.dark}
@@ -50,20 +53,29 @@ export function RevenueChart({ data }: { data: ReturnType<typeof monthlyTotals> 
           formatter={(value: number) => formatCurrency(value)}
         />
         <Legend
+          formatter={(value: string) => <span style={{ color: themeColors.dark }}>{value}</span>}
           iconType="circle"
           iconSize={8}
           wrapperStyle={{ fontSize: 12, color: themeColors.dark, opacity: 0.7 }}
         />
         <Bar
-          dataKey="generado"
-          name="Honorarios"
-          fill={themeColors.blueSecondary}
+          isAnimationActive={false}
+          dataKey="cobrado"
+          name="Cobrado"
+          stackId="mes"
+          fill={themeColors.blueAccent}
+          stroke={themeColors.background}
+          strokeWidth={2}
           radius={[3, 3, 0, 0]}
         />
         <Bar
-          dataKey="cobrado"
-          name="Cobrado"
-          fill={themeColors.blueAccent}
+          isAnimationActive={false}
+          dataKey="porCobrar"
+          name="Por cobrar"
+          stackId="mes"
+          fill={themeColors.debtRed}
+          stroke={themeColors.background}
+          strokeWidth={2}
           radius={[3, 3, 0, 0]}
         />
       </BarChart>

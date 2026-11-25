@@ -105,7 +105,7 @@ export function PatientForm({
         />
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField label="Fecha de inicio de tratamiento" htmlFor={`${formId}-start`} required>
           <Input
             id={`${formId}-start`}
@@ -142,7 +142,7 @@ export function PatientForm({
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField
           label="Frecuencia de sesiones"
           htmlFor={`${formId}-frequency`}
@@ -182,7 +182,7 @@ export function PatientForm({
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField
           label="Costo por sesión"
           htmlFor={`${formId}-cost`}
@@ -213,7 +213,7 @@ export function PatientForm({
         </FormField>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField label="Correo (opcional)" htmlFor={`${formId}-email`}>
           <Input
             id={`${formId}-email`}
@@ -281,7 +281,7 @@ export function PatientForm({
         </div>
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField label="Duración de la sesión (min)" htmlFor={`${formId}-minutes`}>
           <Input
             id={`${formId}-minutes`}

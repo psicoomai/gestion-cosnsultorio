@@ -19,8 +19,8 @@ const severityBadge = {
 } as const;
 
 export default function RevisionPage() {
-  const { patients, sessions, payments } = useClinicData();
-  const issues = useMemo(() => runChecks(patients, sessions, payments), [patients, sessions, payments]);
+  const { patients, sessions, payments, vacations } = useClinicData();
+  const issues = useMemo(() => runChecks(patients, sessions, payments, new Date(), vacations), [patients, sessions, payments, vacations]);
   const summary = useMemo(
     () => yearSummary(patients, sessions, payments, new Date().getFullYear()),
     [patients, sessions, payments]
@@ -40,8 +40,8 @@ export default function RevisionPage() {
       title="Revisión"
       description="Se revisa sola cada vez que registras algo. Aquí aparece lo que parece un error de captura."
     >
-      <div className="grid grid-cols-10 gap-6">
-        <div className="col-span-7 flex flex-col gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+        <div className="lg:col-span-7 flex flex-col gap-6">
           {issues.length === 0 ? (
             <EmptyState
               title="Todo en orden"
@@ -86,7 +86,7 @@ export default function RevisionPage() {
           )}
         </div>
 
-        <div className="col-span-3 flex flex-col gap-6">
+        <div className="lg:col-span-3 flex flex-col gap-6">
           <Card>
             <CardContent className="pt-5">
               <p className="text-xs font-semibold uppercase tracking-wideish text-dark/55">Por revisar</p>

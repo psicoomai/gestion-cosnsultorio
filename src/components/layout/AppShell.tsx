@@ -30,11 +30,11 @@ export function AppShell({
   if (!profile) return <Welcome />;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background md:flex-row">
       <Sidebar />
       <div className="min-w-0 flex-1">
         <Topbar title={title} description={description} actions={actions} />
-        <main className="px-10 py-8">{children}</main>
+        <main className="px-4 py-6 md:px-10 md:py-8">{children}</main>
       </div>
     </div>
   );

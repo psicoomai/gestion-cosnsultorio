@@ -29,7 +29,7 @@ import {
   type ClinicSnapshot,
   type ClinicStore,
 } from "@/lib/storage";
-import type { Patient, Payment, Profile, Session } from "@/lib/types";
+import type { Patient, Payment, Profile, Session, Vacation } from "@/lib/types";
 
 export type NewPatientInput = Omit<Patient, "id">;
 
@@ -47,7 +47,10 @@ interface ClinicDataContextValue {
   patients: Patient[];
   sessions: Session[];
   payments: Payment[];
+  vacations: Vacation[];
   setProfile: (profile: Profile) => void;
+  addVacation: (input: Omit<Vacation, "id">) => Vacation;
+  deleteVacation: (id: string) => void;
   addPatient: (input: NewPatientInput) => Patient;
   updatePatient: (id: string, patch: Partial<NewPatientInput>) => void;
   /** Borra al paciente junto con todas sus sesiones y pagos. */
@@ -96,6 +99,7 @@ export function ClinicDataProvider({
   const [patients, setPatients] = useState<Patient[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [vacations, setVacations] = useState<Vacation[]>([]);
   // Solo se guarda si la carga inicial terminó bien: si falló, guardar el
   // estado vacío borraría lo que la persona tenía guardado.
   const canSave = useRef(false);
@@ -115,6 +119,7 @@ export function ClinicDataProvider({
         setPatients(snapshot.patients);
         setSessions(snapshot.sessions);
         setPayments(snapshot.payments);
+        setVacations(snapshot.vacations ?? []);
       })
       .catch(() => setSaveState("error"))
       .finally(() => {
@@ -140,18 +145,20 @@ export function ClinicDataProvider({
           patients,
           sessions,
           payments,
+          vacations,
           updatedAt: new Date().toISOString(),
         })
         .then(() => setSaveState("saved"))
         .catch(() => setSaveState("error"));
     }, SAVE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [hydrated, profile, patients, sessions, payments]);
+  }, [hydrated, profile, patients, sessions, payments, vacations]);
 
   const replaceData = useCallback((data: ClinicData) => {
     setPatients(data.patients);
     setSessions(data.sessions);
     setPayments(data.payments);
+    if (data.vacations) setVacations(data.vacations);
   }, []);
 
   const value = useMemo<ClinicDataContextValue>(
@@ -162,8 +169,17 @@ export function ClinicDataProvider({
       patients,
       sessions,
       payments,
+      vacations,
       setProfile(next) {
         setProfileState(next);
+      },
+      addVacation(input) {
+        const vacation: Vacation = { id: generateId("vac"), ...input };
+        setVacations((prev) => [...prev, vacation].sort((a, b) => a.start.localeCompare(b.start)));
+        return vacation;
+      },
+      deleteVacation(id) {
+        setVacations((prev) => prev.filter((v) => v.id !== id));
       },
       addPatient(input) {
         const patient: Patient = { id: generateId("p"), ...input };
@@ -231,12 +247,12 @@ export function ClinicDataProvider({
       },
       replaceData,
       loadExampleData() {
-        replaceData({ patients: initialPatients, sessions: initialSessions, payments: initialPayments });
+        replaceData({ patients: initialPatients, sessions: initialSessions, payments: initialPayments, vacations: [] });
       },
       async resetAll() {
         await storeRef.current?.clear();
         setProfileState(null);
-        replaceData({ patients: [], sessions: [], payments: [] });
+        replaceData({ patients: [], sessions: [], payments: [], vacations: [] });
       },
       exportSnapshot() {
         return {
@@ -245,11 +261,12 @@ export function ClinicDataProvider({
           patients,
           sessions,
           payments,
+          vacations,
           updatedAt: new Date().toISOString(),
         };
       },
     }),
-    [hydrated, saveState, profile, patients, sessions, payments, replaceData]
+    [hydrated, saveState, profile, patients, sessions, payments, vacations, replaceData]
   );
 
   return <ClinicDataContext.Provider value={value}>{children}</ClinicDataContext.Provider>;

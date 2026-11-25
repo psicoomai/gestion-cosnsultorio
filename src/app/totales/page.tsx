@@ -10,12 +10,15 @@ import { Select } from "@/components/ui/Select";
 import { StatCard } from "@/components/ui/StatCard";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
 import { ReconciliationCard } from "@/components/review/ReconciliationCard";
+import { YearCharts } from "@/components/charts/YearCharts";
 import { useClinicData } from "@/components/providers/ClinicDataProvider";
 import { unappliedTotal } from "@/lib/checks";
 import { cn } from "@/lib/cn";
 import { downloadBlob } from "@/lib/download";
 import { formatCurrency } from "@/lib/format";
+import { yearInsights } from "@/lib/insights";
 import { availableYears, yearSummary } from "@/lib/metrics";
+import { vacationDaysInMonth } from "@/lib/vacations";
 import type { Currency } from "@/lib/types";
 
 const MONTHS = [
@@ -38,9 +41,10 @@ function amount(value: number, currency: Currency, emptyDash = true) {
 }
 
 export default function TotalesPage() {
-  const { patients, sessions, payments } = useClinicData();
+  const { patients, sessions, payments, vacations } = useClinicData();
   const years = useMemo(() => availableYears(sessions), [sessions]);
-  const [year, setYear] = useState<number>(() => years[0] ?? new Date().getFullYear());
+  // Abre en el año en curso; el selector permite ir a años anteriores o al próximo.
+  const [year, setYear] = useState<number>(() => new Date().getFullYear());
   const currencies = useMemo(() => [...new Set(patients.map((p) => p.currency))].sort(), [patients]);
   const [currency, setCurrency] = useState<Currency>("MXN");
   const activeCurrency = currencies.includes(currency) ? currency : (currencies[0] ?? "MXN");
@@ -53,6 +57,18 @@ export default function TotalesPage() {
   const summary = useMemo(
     () => yearSummary(scopedPatients, sessions, payments, year),
     [scopedPatients, sessions, payments, year]
+  );
+  const previous = useMemo(
+    () => yearSummary(scopedPatients, sessions, payments, year - 1),
+    [scopedPatients, sessions, payments, year]
+  );
+  const insights = useMemo(
+    () => yearInsights(summary, previous.total.generated > 0 ? previous : null),
+    [summary, previous]
+  );
+  const vacationDays = useMemo(
+    () => Array.from({ length: 12 }, (_, m) => vacationDaysInMonth(vacations, year, m)),
+    [vacations, year]
   );
   const unapplied = useMemo(() => unappliedTotal(sessions, payments), [sessions, payments]);
   const rows = summary.rows
@@ -116,7 +132,7 @@ export default function TotalesPage() {
         />
       ) : (
         <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard
               label="Real (cobrado + por cobrar)"
               value={formatCurrency(summary.total.generated, activeCurrency)}
@@ -129,8 +145,16 @@ export default function TotalesPage() {
             />
           </div>
 
-          <div className="grid grid-cols-10 gap-6">
-            <Card className="col-span-6">
+          <YearCharts
+            summary={summary}
+            previous={previous.total.generated > 0 ? previous : null}
+            insights={insights}
+            vacationDays={vacationDays}
+            currency={activeCurrency}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+            <Card className="lg:col-span-6">
               <CardHeader>
                 <CardTitle>Ingresos mensuales {year}</CardTitle>
               </CardHeader>
@@ -147,7 +171,14 @@ export default function TotalesPage() {
                   <Tbody>
                     {summary.months.map((m, i) => (
                         <Tr key={i}>
-                          <Td>{MONTHS[i]}</Td>
+                          <Td>
+                            {MONTHS[i]}
+                            {vacationDays[i] > 0 ? (
+                              <span className="block text-xs text-dark/50">
+                                {vacationDays[i]} {vacationDays[i] === 1 ? "día" : "días"} de vacaciones
+                              </span>
+                            ) : null}
+                          </Td>
                           <Td align="right" className="text-dark/70">
                             {amount(m.generated, activeCurrency)}
                           </Td>
@@ -186,7 +217,7 @@ export default function TotalesPage() {
                 </Table>
               </CardContent>
             </Card>
-            <div className="col-span-4">
+            <div className="lg:col-span-4">
               <ReconciliationCard summary={summary} unapplied={unapplied} />
             </div>
           </div>

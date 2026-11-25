@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 
 const SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx", ".css", ".mdx"];
-const IGNORE_DIRS = new Set(["node_modules", ".next", ".git", "out", "build"]);
+const IGNORE_DIRS = new Set(["node_modules", ".next", ".git", "out", "build", "out-demo"]);
 
 // Único archivo autorizado a contener literales de color: la fuente de verdad.
 const ALLOWED_LITERAL_FILE = "src/lib/theme-colors.ts";
