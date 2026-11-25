@@ -63,7 +63,7 @@ export function RevenueChart({ data }: { data: ReturnType<typeof monthlyTotals> 
           dataKey="cobrado"
           name="Cobrado"
           stackId="mes"
-          fill={themeColors.blueAccent}
+          fill={themeColors.chart}
           stroke={themeColors.background}
           strokeWidth={2}
           radius={[3, 3, 0, 0]}

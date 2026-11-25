@@ -171,7 +171,7 @@ export function YearCharts({
                 dataKey="cobrado"
                 name="Cobrado"
                 stackId="mes"
-                fill={themeColors.blueAccent}
+                fill={themeColors.chart}
                 stroke={themeColors.background}
                 strokeWidth={2}
                 radius={[3, 3, 0, 0]}
@@ -223,7 +223,7 @@ export function YearCharts({
                   isAnimationActive={false}
                   dataKey="cobrado"
                   name={String(summary.year)}
-                  fill={themeColors.blueAccent}
+                  fill={themeColors.chart}
                   radius={[3, 3, 0, 0]}
                 />
               </BarChart>

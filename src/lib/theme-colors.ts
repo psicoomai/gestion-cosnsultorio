@@ -23,6 +23,12 @@ export const themeColors = {
   orangeAccent: "#D17B0F",
   /** Rojo reservado EXCLUSIVAMENTE para adeudos y saldos pendientes. */
   debtRed: "#E0000F",
+  /**
+   * Color de la serie principal de las gráficas (cobrado, año actual). Puede
+   * diferir del acento de los botones: debe distinguirse del rojo de adeudos
+   * y del naranja también para personas con daltonismo (validado).
+   */
+  chart: "#7096FF",
 } as const;
 
 export type ThemeColorName = keyof typeof themeColors;
